@@ -134,6 +134,8 @@ class ShiftAssignment < ApplicationRecord
   def mark_no_show!
     return false unless [offered?, accepted?, confirmed?].any?
 
+    was_accepted_or_confirmed = accepted? || confirmed?
+
     transaction do
       update!(
         status: :no_show,
@@ -141,12 +143,15 @@ class ShiftAssignment < ApplicationRecord
         completed_successfully: false
       )
       worker_profile.increment!(:no_show_count)
-      shift.decrement!(:slots_filled) if accepted? || confirmed?
+      shift.decrement!(:slots_filled) if was_accepted_or_confirmed
+      true
     end
   end
 
   def cancel!(by:, reason: nil)
     return false if completed? || cancelled?
+
+    was_accepted_or_beyond = accepted? || confirmed? || checked_in?
 
     transaction do
       update!(
@@ -155,7 +160,8 @@ class ShiftAssignment < ApplicationRecord
         cancelled_by: by,
         cancellation_reason: reason
       )
-      shift.decrement!(:slots_filled) if accepted? || confirmed? || checked_in?
+      shift.decrement!(:slots_filled) if was_accepted_or_beyond
+      true
     end
   end
 

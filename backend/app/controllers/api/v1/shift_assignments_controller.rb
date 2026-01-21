@@ -3,7 +3,7 @@
 module Api
   module V1
     class ShiftAssignmentsController < BaseController
-      before_action :set_shift_assignment, only: [:show, :accept, :decline, :check_in, :check_out, :cancel]
+      before_action :set_shift_assignment, only: [:show, :accept, :decline, :check_in, :check_out, :cancel, :approve_timesheet]
       before_action :authorize_worker, only: [:accept, :decline, :check_in, :check_out]
       before_action :authorize_assignment_worker, only: [:accept, :decline, :check_in, :check_out]
 

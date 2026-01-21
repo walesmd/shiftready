@@ -1,16 +1,12 @@
 Rails.application.routes.draw do
   # Devise routes for API authentication
+  # Note: Devise 4.9.4 generates deprecation warnings about hash arguments in Rails 8.1+
+  # This is an internal Devise issue that will be fixed in a future release.
+  # See: https://github.com/heartcombo/devise/issues/5605
   devise_for :users,
-    path: "api/v1/auth",
-    path_names: {
-      sign_in: "login",
-      sign_out: "logout",
-      registration: "register"
-    },
-    controllers: {
-      sessions: "api/v1/auth/sessions",
-      registrations: "api/v1/auth/registrations"
-    }
+             path: "api/v1/auth",
+             path_names: { sign_in: "login", sign_out: "logout", registration: "register" },
+             controllers: { sessions: "api/v1/auth/sessions", registrations: "api/v1/auth/registrations" }
 
   # API routes
   namespace :api do
