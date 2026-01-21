@@ -7,6 +7,10 @@ class WorkerAvailability < ApplicationRecord
   # Validations
   validates :day_of_week, presence: true, inclusion: { in: 0..6 }
   validates :start_time, :end_time, presence: true
+  validates :day_of_week, uniqueness: {
+    scope: [:worker_profile_id, :start_time, :end_time],
+    message: 'availability already exists for this time range'
+  }
   validate :end_time_after_start_time
   validate :no_overlapping_windows
 

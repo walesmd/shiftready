@@ -59,6 +59,9 @@ export default function EmployerSignupPage() {
 
   const updateFormData = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "industry" && value) {
+      setError(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +74,7 @@ export default function EmployerSignupPage() {
       email: formData.email,
       password: formData.password,
       password_confirmation: formData.password,
-      role: "employer",
+      role: "employer" as const,
       company_attributes: {
         name: formData.companyName,
         industry: formData.industry,
@@ -92,22 +95,30 @@ export default function EmployerSignupPage() {
       },
     };
 
-    const result = await register(
-      registrationData.email,
-      registrationData.password,
-      registrationData.password_confirmation,
-      registrationData.role,
-      registrationData.company_attributes,
-      registrationData.employer_profile_attributes
-    );
+    try {
+      const result = await register(
+        registrationData.email,
+        registrationData.password,
+        registrationData.password_confirmation,
+        registrationData.role,
+        registrationData.company_attributes,
+        registrationData.employer_profile_attributes
+      );
 
-    if (result.success) {
-      router.push("/dashboard/employer");
-    } else {
-      setError(result.error || "Registration failed. Please try again.");
+      if (result.success) {
+        router.push("/dashboard/employer");
+      } else {
+        setError(result.error || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Registration failed due to an unexpected error. Please try again.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   const benefits = [
@@ -305,11 +316,24 @@ export default function EmployerSignupPage() {
               className="space-y-5"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (!formData.industry) {
+                  setError("Please select your industry.");
+                  return;
+                }
+                if (!formData.workersNeeded) {
+                  setError(
+                    "Please select how many workers you typically need per week."
+                  );
+                  return;
+                }
+                setError(null);
                 setStep(3);
               }}
             >
               <div>
-                <Label htmlFor="industry">Industry</Label>
+                <Label htmlFor="industry">
+                  Industry <span className="text-destructive">*</span>
+                </Label>
                 <Select
                   value={formData.industry}
                   onValueChange={(value) => updateFormData("industry", value)}
@@ -370,11 +394,17 @@ export default function EmployerSignupPage() {
 
               <div>
                 <Label htmlFor="workers">
-                  How many workers do you typically need per week?
+                  How many workers do you typically need per week?{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={formData.workersNeeded}
-                  onValueChange={(value) => updateFormData("workersNeeded", value)}
+                  onValueChange={(value) => {
+                    updateFormData("workersNeeded", value);
+                    if (value) {
+                      setError(null);
+                    }
+                  }}
                 >
                   <SelectTrigger className="mt-2 bg-card">
                     <SelectValue placeholder="Select range" />

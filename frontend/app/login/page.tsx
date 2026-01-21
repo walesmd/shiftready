@@ -36,8 +36,15 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      // Redirect based on user type (we could check role from the response)
-      router.push(userType === "worker" ? "/dashboard/worker" : "/dashboard/employer");
+      const { role } = result;
+
+      if (!role) {
+        setError("Login succeeded, but your role could not be determined.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push(role === "worker" ? "/dashboard/worker" : "/dashboard/employer");
     } else {
       setError(result.error || "Login failed. Please check your credentials.");
     }
