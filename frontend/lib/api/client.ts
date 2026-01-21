@@ -610,6 +610,12 @@ export interface CreateWorkerProfileData {
   ssn_encrypted?: string;
   preferred_payment_method?: string;
   bank_account_last_4?: string;
+  preferred_job_types?: string[];
+  availabilities?: Array<{
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+  }>;
 }
 
 export interface CreateEmployerProfileData {

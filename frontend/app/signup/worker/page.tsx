@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/auth-context";
+import { apiClient } from "@/lib/api/client";
 import {
   MessageSquare,
   ArrowLeft,
@@ -26,6 +27,7 @@ export default function WorkerSignupPage() {
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -34,6 +36,10 @@ export default function WorkerSignupPage() {
     phone: "",
     email: "",
     password: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "TX",
     zip: "",
     workTypes: [] as string[],
     availability: [] as string[],
@@ -42,7 +48,7 @@ export default function WorkerSignupPage() {
     ageConfirmed: false,
   });
 
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const router = useRouter();
 
   const updateFormData = (field: string, value: string | boolean | string[]) => {
@@ -65,19 +71,55 @@ export default function WorkerSignupPage() {
     setIsSubmitting(true);
 
     try {
-      // For now, we only register with email/password/role
-      // Additional profile data would be saved in a separate API call
-      const result = await register(
-        formData.email,
-        formData.password,
-        formData.password, // password_confirmation
-        "worker"
-      );
+      if (user?.role && user.role !== "worker") {
+        setError("Please sign out before creating a worker account.");
+        return;
+      }
 
-      if (result.success) {
-        router.push("/dashboard/worker");
+      const shouldRegister = !(user || accountCreated);
+      const registrationResult = shouldRegister
+        ? await register(
+            formData.email,
+            formData.password,
+            formData.password, // password_confirmation
+            "worker"
+          )
+        : { success: true };
+
+      if (registrationResult.success) {
+        setAccountCreated(true);
+        const normalizedPhone = formatPhoneNumber(formData.phone);
+        const preferredJobTypes = formData.workTypes
+          .map((type) => workTypeMap[type])
+          .filter(Boolean);
+        const availabilityWindows = buildAvailabilityWindows(formData.availability);
+
+        const profileResult = await apiClient.createWorkerProfile({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: normalizedPhone,
+          address_line_1: formData.addressLine1,
+          address_line_2: formData.addressLine2 || undefined,
+          city: formData.city,
+          state: formData.state.toUpperCase(),
+          zip_code: formData.zip,
+          over_18_confirmed: formData.ageConfirmed,
+          terms_accepted_at: formData.termsAccepted ? new Date().toISOString() : undefined,
+          sms_consent_given_at: formData.smsConsent ? new Date().toISOString() : undefined,
+          preferred_job_types: preferredJobTypes,
+          availabilities: availabilityWindows,
+        });
+
+        if (profileResult.data) {
+          router.push("/dashboard/worker");
+        } else {
+          setError(
+            profileResult.error ||
+              "Your account was created, but we couldn't finish your profile."
+          );
+        }
       } else {
-        setError(result.error || "Registration failed. Please try again.");
+        setError(registrationResult.error || "Registration failed. Please try again.");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -108,6 +150,54 @@ export default function WorkerSignupPage() {
       description: "Find work close to where you are.",
     },
   ];
+
+  const workTypeMap: Record<string, string> = {
+    "Moving & lifting": "moving",
+    "Warehouse work": "warehouse",
+    Driving: "delivery",
+    "Event staffing": "event_setup",
+    Cleaning: "cleaning",
+    "General labor": "general_labor",
+  };
+
+  const availabilityMap: Record<string, { days: number[]; start: string; end: string }> = {
+    "Weekday mornings": { days: [1, 2, 3, 4, 5], start: "08:00", end: "12:00" },
+    "Weekday afternoons": { days: [1, 2, 3, 4, 5], start: "12:00", end: "17:00" },
+    "Weekday evenings": { days: [1, 2, 3, 4, 5], start: "17:00", end: "21:00" },
+    "Weekends anytime": { days: [0, 6], start: "08:00", end: "18:00" },
+  };
+
+  const buildAvailabilityWindows = (selections: string[]) => {
+    const windows: Array<{ day_of_week: number; start_time: string; end_time: string }> =
+      [];
+
+    selections.forEach((selection) => {
+      const mapping = availabilityMap[selection];
+      if (!mapping) {
+        return;
+      }
+      mapping.days.forEach((day) => {
+        windows.push({
+          day_of_week: day,
+          start_time: mapping.start,
+          end_time: mapping.end,
+        });
+      });
+    });
+
+    return windows;
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 10) {
+      return `+1${digits}`;
+    }
+    if (digits.length === 11 && digits.startsWith("1")) {
+      return `+${digits}`;
+    }
+    return value.trim();
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -263,6 +353,57 @@ export default function WorkerSignupPage() {
                 setStep(3);
               }}
             >
+              <div>
+                <Label htmlFor="addressLine1">Street address</Label>
+                <Input
+                  id="addressLine1"
+                  placeholder="123 Main St"
+                  className="mt-2 bg-card"
+                  value={formData.addressLine1}
+                  onChange={(e) => updateFormData("addressLine1", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="addressLine2">Apartment, suite, etc. (optional)</Label>
+                <Input
+                  id="addressLine2"
+                  placeholder="Apt 4B"
+                  className="mt-2 bg-card"
+                  value={formData.addressLine2}
+                  onChange={(e) => updateFormData("addressLine2", e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    placeholder="San Antonio"
+                    className="mt-2 bg-card"
+                    value={formData.city}
+                    onChange={(e) => updateFormData("city", e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    placeholder="TX"
+                    className="mt-2 bg-card uppercase"
+                    value={formData.state}
+                    onChange={(e) =>
+                      updateFormData("state", e.target.value.toUpperCase())
+                    }
+                    maxLength={2}
+                    required
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="zip">ZIP code</Label>
                 <Input

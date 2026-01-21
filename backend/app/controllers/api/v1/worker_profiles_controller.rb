@@ -14,11 +14,15 @@ module Api
 
         worker_profile = current_user.build_worker_profile(worker_profile_params)
 
-        if worker_profile.save
-          render json: worker_profile_response(worker_profile), status: :created
-        else
-          render_errors(worker_profile.errors.full_messages)
+        WorkerProfile.transaction do
+          worker_profile.save!
+          sync_preferred_job_types!(worker_profile)
+          sync_availabilities!(worker_profile)
         end
+
+        render json: worker_profile_response(worker_profile), status: :created
+      rescue ActiveRecord::RecordInvalid => error
+        render_errors(error.record.errors.full_messages)
       end
 
       # GET /api/v1/workers/me
@@ -36,11 +40,15 @@ module Api
           return render_error('Worker profile not found', :not_found)
         end
 
-        if @worker_profile.update(worker_profile_params)
-          render json: worker_profile_response(@worker_profile)
-        else
-          render_errors(@worker_profile.errors.full_messages)
+        WorkerProfile.transaction do
+          @worker_profile.update!(worker_profile_params)
+          sync_preferred_job_types!(@worker_profile) if preferred_job_types_provided?
+          sync_availabilities!(@worker_profile) if availabilities_provided?
         end
+
+        render json: worker_profile_response(@worker_profile)
+      rescue ActiveRecord::RecordInvalid => error
+        render_errors(error.record.errors.full_messages)
       end
 
       private
@@ -74,6 +82,52 @@ module Api
           :preferred_payment_method,
           :bank_account_last_4
         )
+      end
+
+      def sync_preferred_job_types!(profile)
+        preferred_job_types = preferred_job_types_params
+        return if preferred_job_types.blank?
+
+        profile.worker_preferred_job_types.destroy_all
+        preferred_job_types.uniq.each do |job_type|
+          profile.worker_preferred_job_types.create!(job_type: job_type)
+        end
+      end
+
+      def sync_availabilities!(profile)
+        availabilities = availabilities_params
+        return if availabilities.blank?
+
+        profile.worker_availabilities.destroy_all
+        availabilities.each do |availability|
+          profile.worker_availabilities.create!(
+            day_of_week: availability[:day_of_week],
+            start_time: availability[:start_time],
+            end_time: availability[:end_time]
+          )
+        end
+      end
+
+      def preferred_job_types_params
+        params.require(:worker_profile).permit(preferred_job_types: [])[:preferred_job_types]
+      rescue ActionController::ParameterMissing
+        nil
+      end
+
+      def availabilities_params
+        params.require(:worker_profile).permit(
+          availabilities: [:day_of_week, :start_time, :end_time]
+        )[:availabilities]
+      rescue ActionController::ParameterMissing
+        nil
+      end
+
+      def preferred_job_types_provided?
+        params.dig(:worker_profile, :preferred_job_types).present?
+      end
+
+      def availabilities_provided?
+        params.dig(:worker_profile, :availabilities).present?
       end
 
       def worker_profile_response(profile)
