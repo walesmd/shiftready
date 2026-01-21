@@ -133,7 +133,7 @@ export default function WorkerDashboard() {
           );
 
           const totalEarned = completed.reduce(
-            (sum, assignment) => sum + (assignment.timesheet.calculated_pay_cents || 0),
+            (sum, assignment) => sum + (assignment.timesheet?.calculated_pay_cents || 0),
             0
           );
 
@@ -166,7 +166,7 @@ export default function WorkerDashboard() {
     {
       name: "Upcoming Shifts",
       value: stats.upcomingShifts.toString(),
-      change: "Next 7 days",
+      change: "Scheduled",
       icon: Calendar,
     },
     {

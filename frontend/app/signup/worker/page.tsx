@@ -71,6 +71,12 @@ export default function WorkerSignupPage() {
     setIsSubmitting(true);
 
     try {
+      const normalizedPhone = formatPhoneNumber(formData.phone);
+      if (!normalizedPhone) {
+        setError("Enter a valid 10-digit phone number.");
+        return;
+      }
+
       if (user?.role && user.role !== "worker") {
         setError("Please sign out before creating a worker account.");
         return;
@@ -88,7 +94,6 @@ export default function WorkerSignupPage() {
 
       if (registrationResult.success) {
         setAccountCreated(true);
-        const normalizedPhone = formatPhoneNumber(formData.phone);
         const preferredJobTypes = formData.workTypes
           .map((type) => workTypeMap[type])
           .filter(Boolean);
@@ -196,7 +201,7 @@ export default function WorkerSignupPage() {
     if (digits.length === 11 && digits.startsWith("1")) {
       return `+${digits}`;
     }
-    return value.trim();
+    return null;
   };
 
   return (
@@ -255,6 +260,12 @@ export default function WorkerSignupPage() {
               className="space-y-5"
               onSubmit={(e) => {
                 e.preventDefault();
+                const normalizedPhone = formatPhoneNumber(formData.phone);
+                if (!normalizedPhone) {
+                  setError("Enter a valid 10-digit phone number.");
+                  return;
+                }
+                setError(null);
                 setStep(2);
               }}
             >

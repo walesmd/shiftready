@@ -35,6 +35,9 @@ export function RegionSection({ onNotify }: RegionSectionProps) {
 
     setIsSubmitting(true);
     try {
+      if (!onNotify) {
+        throw new Error("Notification handler not configured");
+      }
       await onNotify?.(trimmedEmail);
       setSuccessMessage("Thanks! We'll notify you when we launch in your city.");
       setEmail("");

@@ -98,8 +98,12 @@ module Api
         availabilities = availabilities_params
         return if availabilities.blank?
 
+        normalized = availabilities.map { |availability| normalize_availability(availability) }
+        deduped = normalized.uniq
+        validate_availability_overlaps!(profile, deduped)
+
         profile.worker_availabilities.destroy_all
-        availabilities.each do |availability|
+        deduped.each do |availability|
           profile.worker_availabilities.create!(
             day_of_week: availability[:day_of_week],
             start_time: availability[:start_time],
@@ -120,6 +124,64 @@ module Api
         )[:availabilities]
       rescue ActionController::ParameterMissing
         nil
+      end
+
+      def normalize_availability(availability)
+        {
+          day_of_week: availability[:day_of_week] || availability['day_of_week'],
+          start_time: cast_time(availability[:start_time] || availability['start_time']),
+          end_time: cast_time(availability[:end_time] || availability['end_time'])
+        }
+      end
+
+      def cast_time(value)
+        return value if value.is_a?(Time)
+        return nil if value.blank?
+
+        if Time.zone
+          Time.zone.parse(value.to_s)
+        else
+          Time.parse(value.to_s)
+        end
+      rescue ArgumentError, TypeError
+        nil
+      end
+
+      def validate_availability_overlaps!(profile, availabilities)
+        errors = []
+
+        availabilities.group_by { |availability| availability[:day_of_week] }.each do |day, entries|
+          next if day.blank?
+
+          sorted = entries.sort_by { |availability| availability[:start_time] || Time.at(0) }
+          previous = nil
+
+          sorted.each do |current|
+            if previous && current[:start_time].present? && previous[:end_time].present?
+              if current[:start_time] < previous[:end_time]
+                errors << overlap_error_message(day, previous, current)
+              end
+            end
+
+            previous = current if current[:end_time].present?
+          end
+        end
+
+        return if errors.empty?
+
+        errors.each { |message| profile.errors.add(:base, message) }
+        raise ActiveRecord::RecordInvalid, profile
+      end
+
+      def overlap_error_message(day, first, second)
+        day_name = WorkerAvailability::DAYS_OF_WEEK[day.to_i] || 'Selected day'
+        "#{day_name} availability #{format_time_range(first)} overlaps with #{format_time_range(second)}"
+      end
+
+      def format_time_range(availability)
+        start_time = availability[:start_time]&.strftime('%I:%M %p') || 'start time'
+        end_time = availability[:end_time]&.strftime('%I:%M %p') || 'end time'
+        "#{start_time}-#{end_time}"
       end
 
       def preferred_job_types_provided?

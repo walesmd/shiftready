@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_21_165923) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_21_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -250,6 +250,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_21_165923) do
     t.time "start_time", null: false
     t.datetime "updated_at", null: false
     t.bigint "worker_profile_id", null: false
+    t.index ["worker_profile_id", "day_of_week", "start_time", "end_time"], name: "index_worker_availabilities_on_profile_day_time", unique: true
     t.index ["worker_profile_id", "day_of_week"], name: "index_worker_avail_on_profile_and_day"
     t.index ["worker_profile_id"], name: "index_worker_availabilities_on_worker_profile_id"
   end

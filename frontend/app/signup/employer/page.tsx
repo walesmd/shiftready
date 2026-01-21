@@ -394,7 +394,8 @@ export default function EmployerSignupPage() {
 
               <div>
                 <Label htmlFor="workers">
-                  How many workers do you typically need per week?
+                  How many workers do you typically need per week?{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={formData.workersNeeded}

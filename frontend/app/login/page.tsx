@@ -40,7 +40,6 @@ export default function LoginPage() {
 
       if (!role) {
         setError("Login succeeded, but your role could not be determined.");
-        router.push("/dashboard/employer");
         setIsSubmitting(false);
         return;
       }
