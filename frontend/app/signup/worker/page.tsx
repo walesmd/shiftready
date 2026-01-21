@@ -64,22 +64,26 @@ export default function WorkerSignupPage() {
     setError(null);
     setIsSubmitting(true);
 
-    // For now, we only register with email/password/role
-    // Additional profile data would be saved in a separate API call
-    const result = await register(
-      formData.email,
-      formData.password,
-      formData.password, // password_confirmation
-      "worker"
-    );
+    try {
+      // For now, we only register with email/password/role
+      // Additional profile data would be saved in a separate API call
+      const result = await register(
+        formData.email,
+        formData.password,
+        formData.password, // password_confirmation
+        "worker"
+      );
 
-    if (result.success) {
-      router.push("/dashboard/worker");
-    } else {
-      setError(result.error || "Registration failed. Please try again.");
+      if (result.success) {
+        router.push("/dashboard/worker");
+      } else {
+        setError(result.error || "Registration failed. Please try again.");
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   const benefits = [

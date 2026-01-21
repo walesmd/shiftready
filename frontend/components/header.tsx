@@ -45,21 +45,21 @@ export function Header() {
             className="md:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
-
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col gap-4">
-              <Link href="#employers" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              <Link href="#employers" className="text-muted-foreground hover:text-foreground transition-colors text-sm" onClick={() => setMobileMenuOpen(false)}>
                 For Employers
               </Link>
-              <Link href="#workers" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              <Link href="#workers" className="text-muted-foreground hover:text-foreground transition-colors text-sm" onClick={() => setMobileMenuOpen(false)}>
                 For Workers
               </Link>
-              <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors text-sm" onClick={() => setMobileMenuOpen(false)}>
                 How It Works
               </Link>
               <div className="flex flex-col gap-2 pt-4">

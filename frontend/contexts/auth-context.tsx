@@ -3,11 +3,17 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { apiClient, User } from "@/lib/api/client";
 
+export type LoginResult = {
+  success: boolean;
+  error?: string;
+  role?: User["role"];
+};
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   register: (
     email: string,
     password: string,
@@ -49,11 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
+  const login: AuthContextType["login"] = async (email: string, password: string) => {
     const response = await apiClient.login(email, password);
     if (response.data) {
       setUser(response.data.user);
-      return { success: true };
+      return { success: true, role: response.data.user.role };
     }
     return { success: false, error: response.error || "Login failed" };
   };
