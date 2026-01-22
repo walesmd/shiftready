@@ -345,6 +345,7 @@ export interface User {
 
 export interface Shift {
   id: number;
+  tracking_code: string;
   company: {
     id: number;
     name: string;
