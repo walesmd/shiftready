@@ -30,9 +30,12 @@ export default function LoginPage() {
       const { role } = result;
 
       if (!role) {
-        await logout();
+        try {
+          await logout();
+        } catch {
+          // Continue to show error even if logout fails
+        }
         setError("Login succeeded, but your role could not be determined.");
-        router.replace("/login");
         setIsSubmitting(false);
         return;
       }
@@ -44,10 +47,19 @@ export default function LoginPage() {
       } else if (role === "admin") {
         router.push("/dashboard/admin");
       } else {
-        await logout();
-        setError("Unsupported account role. Please contact support.");
-        router.replace("/login");
-        setIsSubmitting(false);
+        try {
+          await logout();
+          setError("Unsupported account role. Please contact support.");
+          router.replace("/login");
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Failed to log out. Please try again.";
+          setError(message);
+        } finally {
+          setIsSubmitting(false);
+        }
         return;
       }
     } else {

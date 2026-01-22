@@ -64,7 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     hasInitializedRef.current = true;
-    refreshUser();
+    const timeoutId = setTimeout(() => {
+      void refreshUser();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [refreshUser]);
 
   const login: AuthContextType["login"] = async (email: string, password: string) => {

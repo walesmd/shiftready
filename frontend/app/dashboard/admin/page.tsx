@@ -164,7 +164,7 @@ export default function AdminDashboard() {
 
       const today = new Date();
       const todayShifts =
-        shiftsResponse.data?.shifts.filter((shift) =>
+        (shiftsResponse.data?.shifts ?? shiftItems).filter((shift: Shift) =>
           isSameDay(new Date(shift.schedule.start_datetime), today)
         ) || [];
 
