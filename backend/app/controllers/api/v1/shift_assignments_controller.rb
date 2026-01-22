@@ -5,8 +5,8 @@ module Api
     class ShiftAssignmentsController < BaseController
       before_action :set_shift_assignment, only: [:show, :accept, :decline, :check_in, :check_out, :cancel, :approve_timesheet]
       before_action :authorize_employer_assignment, only: [:approve_timesheet, :cancel]
-      before_action :authorize_worker, only: [:accept, :decline, :check_in, :check_out]
-      before_action :authorize_assignment_worker, only: [:accept, :decline, :check_in, :check_out]
+      before_action :authorize_worker, only: [:accept, :decline, :check_in, :check_out, :cancel]
+      before_action :authorize_assignment_worker, only: [:accept, :decline, :check_in, :check_out, :cancel]
 
       # GET /api/v1/shift_assignments
       def index
