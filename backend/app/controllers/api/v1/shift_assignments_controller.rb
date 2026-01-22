@@ -4,9 +4,10 @@ module Api
   module V1
     class ShiftAssignmentsController < BaseController
       before_action :set_shift_assignment, only: [:show, :accept, :decline, :check_in, :check_out, :cancel, :approve_timesheet]
-      before_action :authorize_employer_assignment, only: [:approve_timesheet, :cancel]
-      before_action :authorize_worker, only: [:accept, :decline, :check_in, :check_out, :cancel]
-      before_action :authorize_assignment_worker, only: [:accept, :decline, :check_in, :check_out, :cancel]
+      before_action :authorize_employer_assignment, only: [:approve_timesheet]
+      before_action :authorize_worker, only: [:accept, :decline, :check_in, :check_out]
+      before_action :authorize_assignment_worker, only: [:accept, :decline, :check_in, :check_out]
+      before_action :authorize_cancellation, only: [:cancel]
 
       # GET /api/v1/shift_assignments
       def index
@@ -141,6 +142,20 @@ module Api
         assignment_company_id = @shift_assignment.shift.company_id
 
         return if employer_company_id.present? && employer_company_id == assignment_company_id
+
+        render_error('You do not have permission to modify this assignment', :forbidden)
+      end
+
+      def authorize_cancellation
+        if current_user.worker?
+          return if @shift_assignment.worker_profile_id == current_user.worker_profile&.id
+        elsif current_user.employer?
+          employer_company_id = current_user.employer_profile&.company_id
+          assignment_company_id = @shift_assignment.shift.company_id
+          return if employer_company_id.present? && employer_company_id == assignment_company_id
+        elsif current_user.admin?
+          return
+        end
 
         render_error('You do not have permission to modify this assignment', :forbidden)
       end
