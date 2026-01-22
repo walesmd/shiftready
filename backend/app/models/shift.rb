@@ -24,8 +24,11 @@ class Shift < ApplicationRecord
   validates :pay_rate_cents, numericality: { greater_than: 0 }
   validates :slots_total, :slots_filled, :min_workers_needed, numericality: { greater_than_or_equal_to: 0 }
   validates :job_type, inclusion: { in: WorkerPreferredJobType::AVAILABLE_JOB_TYPES }
+  validates :tracking_code, presence: true, uniqueness: true
+  validates :tracking_code, format: { with: /\ASR-[A-F0-9]{6}\z/ }, allow_blank: true
   validate :end_datetime_after_start_datetime
   validate :min_workers_not_greater_than_slots
+  validate :tracking_code_immutable, on: :update
 
   # Scopes
   scope :active, -> { where.not(status: [:cancelled, :completed]) }
@@ -36,10 +39,20 @@ class Shift < ApplicationRecord
   scope :for_company, ->(company_id) { where(company_id: company_id) }
   scope :starting_soon, -> { upcoming.order(start_datetime: :asc) }
   scope :needs_workers, -> { where('slots_filled < slots_total') }
+  scope :by_tracking_code, ->(code) { code.present? ? where(tracking_code: code.upcase) : none }
 
   # Callbacks
+  before_validation :generate_tracking_code, on: :create
   before_validation :set_min_workers_default
   after_update :check_if_filled
+
+  # Class methods
+  def self.generate_unique_tracking_code
+    loop do
+      code = "SR-#{SecureRandom.hex(3).upcase}"
+      break code unless exists?(tracking_code: code)
+    end
+  end
 
   # Instance methods
   def hourly_rate
@@ -164,6 +177,16 @@ class Shift < ApplicationRecord
   def check_if_filled
     if slots_filled >= slots_total && (recruiting? || posted?)
       mark_as_filled!
+    end
+  end
+
+  def generate_tracking_code
+    self.tracking_code ||= self.class.generate_unique_tracking_code
+  end
+
+  def tracking_code_immutable
+    if tracking_code_changed? && tracking_code_was.present?
+      errors.add(:tracking_code, "cannot be changed after creation")
     end
   end
 end

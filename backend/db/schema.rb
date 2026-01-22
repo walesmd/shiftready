@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_21_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_22_183715) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -197,6 +197,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_21_170000) do
     t.datetime "start_datetime", null: false
     t.integer "status", default: 0, null: false
     t.string "title", null: false
+    t.string "tracking_code", null: false
     t.datetime "updated_at", null: false
     t.bigint "work_location_id", null: false
     t.index ["company_id"], name: "index_shifts_on_company_id"
@@ -205,6 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_21_170000) do
     t.index ["start_datetime"], name: "index_shifts_on_start_datetime"
     t.index ["status", "start_datetime"], name: "index_shifts_on_status_and_start_datetime"
     t.index ["status"], name: "index_shifts_on_status"
+    t.index ["tracking_code"], name: "index_shifts_on_tracking_code", unique: true
     t.index ["work_location_id"], name: "index_shifts_on_work_location_id"
   end
 

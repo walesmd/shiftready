@@ -100,6 +100,19 @@ module Api
         end
       end
 
+      # GET /api/v1/shifts/lookup/:tracking_code
+      def lookup
+        if params[:tracking_code].blank?
+          return render_error('Tracking code required', :bad_request)
+        end
+
+        @shift = Shift.includes(:company, :work_location, :created_by_employer)
+                      .find_by!(tracking_code: params[:tracking_code].upcase)
+        render json: shift_response(@shift)
+      rescue ActiveRecord::RecordNotFound
+        render_error('Shift not found', :not_found)
+      end
+
       private
 
       def set_shift
@@ -141,6 +154,7 @@ module Api
       def shift_response(shift)
         {
           id: shift.id,
+          tracking_code: shift.tracking_code,
           company: {
             id: shift.company.id,
             name: shift.company.name

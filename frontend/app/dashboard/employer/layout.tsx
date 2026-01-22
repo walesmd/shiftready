@@ -156,8 +156,8 @@ export default function EmployerDashboardLayout({
               <p className="text-xs text-muted-foreground mt-1">
                 Post a new shift and we will find workers for you.
               </p>
-              <Button size="sm" className="w-full mt-3">
-                Post a Shift
+              <Button size="sm" className="w-full mt-3" asChild>
+                <Link href="/dashboard/employer/shifts">Post a Shift</Link>
               </Button>
             </div>
           </div>

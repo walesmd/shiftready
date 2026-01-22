@@ -41,6 +41,9 @@ Rails.application.routes.draw do
 
       # Shifts
       resources :shifts, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+          get 'lookup/:tracking_code', to: 'shifts#lookup', as: :lookup
+        end
         member do
           post :start_recruiting
           post :cancel
