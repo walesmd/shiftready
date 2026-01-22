@@ -36,8 +36,18 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 
-  # Print deprecation notices to the stderr.
-  config.active_support.deprecation = :stderr
+  # Configure deprecation warnings
+  # Suppress Devise-related deprecation warnings about hash arguments in Rails 8.1+
+  # These are internal to Devise and will be fixed in a future Devise release
+  config.active_support.deprecation = lambda do |message, callstack, deprecation_horizon, gem_name|
+    # Skip Devise routing deprecation warnings
+    return if message.include?("resource received a hash argument") &&
+              callstack.any? { |line| line.to_s.include?("config/routes.rb:") }
+
+    # Print all other deprecation warnings to stderr
+    $stderr.puts message
+    $stderr.puts callstack.first.to_s if callstack.first
+  end
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
