@@ -46,6 +46,9 @@ FactoryBot.define do
       actual_start_time { Time.current }
     end
 
+    # Note: There is no :checked_out status enum value.
+    # "Checked out" is a state within :checked_in status (checked_out_at present).
+    # Status remains :checked_in until timesheet is approved and mark_complete! is called.
     trait :checked_out do
       status { :checked_in }
       accepted_at { 9.hours.ago }

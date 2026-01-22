@@ -460,7 +460,6 @@ class ShiftAssignmentTest < ActiveSupport::TestCase
 
     assert result
     assert assignment.no_show?
-    assert assignment.no_show?
     assert_not assignment.completed_successfully?
     assert_equal 1, worker.reload.no_show_count
   end

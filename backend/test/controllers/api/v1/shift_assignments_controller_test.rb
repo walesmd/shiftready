@@ -19,10 +19,10 @@ class Api::V1::ShiftAssignmentsControllerTest < ActionDispatch::IntegrationTest
   # AUTHENTICATION
   # ============================================================
 
-  test "requires authentication for index" do
-    # Skip this test - API mode has sessions disabled which causes issues with Devise
-    # Authentication is tested implicitly through all other tests that use auth_headers
-    skip "API mode has sessions disabled"
+  test "requires authentication for assignments" do
+    get "/api/v1/shift_assignments"
+
+    assert_response :unauthorized
   end
 
   # ============================================================

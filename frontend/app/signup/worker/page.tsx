@@ -233,6 +233,17 @@ export default function WorkerSignupPage() {
             Create your worker account in just a few steps
           </p>
 
+          <div className="mt-6 rounded-lg border border-accent/20 bg-accent/10 p-4 text-sm text-foreground">
+            <p className="font-medium">Hiring for your business instead?</p>
+            <p className="mt-1 text-muted-foreground">
+              Create an employer account to post shifts and find reliable workers.{" "}
+              <Link href="/signup/employer" className="text-accent font-semibold hover:underline">
+                Start employer signup
+              </Link>
+              .
+            </p>
+          </div>
+
           {/* Progress indicator */}
           <div className="flex items-center gap-2 mt-6">
             <div

@@ -73,10 +73,10 @@ FactoryBot.define do
     # Ensure work_location belongs to same company
     after(:build) do |shift|
       if shift.work_location.company_id != shift.company_id
-        shift.work_location = create(:work_location, company: shift.company)
+        shift.work_location = build(:work_location, company: shift.company)
       end
       if shift.created_by_employer.company_id != shift.company_id
-        shift.created_by_employer = create(:employer_profile, :onboarded, company: shift.company)
+        shift.created_by_employer = build(:employer_profile, :onboarded, company: shift.company)
       end
     end
   end

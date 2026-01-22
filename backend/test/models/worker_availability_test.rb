@@ -340,10 +340,9 @@ class WorkerAvailabilityTest < ActiveSupport::TestCase
   # EDGE CASES
   # ============================================================
 
-  test "handles midnight crossing times" do
+  test "handles late evening times" do
     worker = create(:worker_profile)
-    # Night shift: 10pm - ???
-    # Note: This test depends on how the system handles overnight shifts
+    # Late evening shift ending before midnight
     evening = build(:worker_availability,
                     worker_profile: worker,
                     day_of_week: 5, # Friday
