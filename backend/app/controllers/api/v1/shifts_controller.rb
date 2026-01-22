@@ -102,6 +102,10 @@ module Api
 
       # GET /api/v1/shifts/lookup/:tracking_code
       def lookup
+        if params[:tracking_code].blank?
+          return render_error('Tracking code required', :bad_request)
+        end
+
         @shift = Shift.includes(:company, :work_location, :created_by_employer)
                       .find_by!(tracking_code: params[:tracking_code].upcase)
         render json: shift_response(@shift)

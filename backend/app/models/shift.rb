@@ -39,7 +39,7 @@ class Shift < ApplicationRecord
   scope :for_company, ->(company_id) { where(company_id: company_id) }
   scope :starting_soon, -> { upcoming.order(start_datetime: :asc) }
   scope :needs_workers, -> { where('slots_filled < slots_total') }
-  scope :by_tracking_code, ->(code) { where(tracking_code: code.upcase) }
+  scope :by_tracking_code, ->(code) { code.present? ? where(tracking_code: code.upcase) : none }
 
   # Callbacks
   before_validation :generate_tracking_code, on: :create

@@ -113,6 +113,12 @@ export default function CreateShiftPage() {
     setError(null);
   };
 
+  const today = new Date();
+  const todayLocalIsoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(today.getDate()).padStart(2, "0")}`;
+
   // Calculate duration in hours
   const calculateDurationHours = () => {
     if (!formData.date || !formData.startTime || !formData.endTime) return 0;
@@ -330,7 +336,7 @@ export default function CreateShiftPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form */}
         <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit}>
+          <form id="shiftForm" onSubmit={handleSubmit}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -433,7 +439,7 @@ export default function CreateShiftPage() {
                       className="mt-2 bg-card"
                       value={formData.date}
                       onChange={(e) => updateFormData("date", e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
+                      min={todayLocalIsoDate}
                       required
                     />
                   </div>
@@ -648,10 +654,10 @@ export default function CreateShiftPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
+                  form="shiftForm"
                   size="lg"
                   className="w-full"
                   disabled={isSubmitting || workLocations.length === 0}
-                  onClick={handleSubmit}
                 >
                   {isSubmitting ? (
                     <>
