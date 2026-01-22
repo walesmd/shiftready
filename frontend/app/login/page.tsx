@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +30,9 @@ export default function LoginPage() {
       const { role } = result;
 
       if (!role) {
+        await logout();
         setError("Login succeeded, but your role could not be determined.");
+        router.replace("/login");
         setIsSubmitting(false);
         return;
       }
@@ -39,8 +41,14 @@ export default function LoginPage() {
         router.push("/dashboard/worker");
       } else if (role === "employer") {
         router.push("/dashboard/employer");
-      } else {
+      } else if (role === "admin") {
         router.push("/dashboard/admin");
+      } else {
+        await logout();
+        setError("Unsupported account role. Please contact support.");
+        router.replace("/login");
+        setIsSubmitting(false);
+        return;
       }
     } else {
       setError(result.error || "Login failed. Please check your credentials.");

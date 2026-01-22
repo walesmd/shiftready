@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -131,66 +131,84 @@ export default function AdminDashboard() {
     fillRate: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const hasFetchedRef = useRef(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const shiftsResponse = await apiClient.getShifts({
+        start_date: startOfDay.toISOString(),
+        end_date: endOfDay.toISOString(),
+      });
+
+      const shiftItems =
+        shiftsResponse.data?.shifts ??
+        (shiftsResponse.data as { items?: { id: number }[] } | null)?.items ??
+        [];
+      const shiftIds = shiftItems.map((shift) => shift.id);
+      const assignmentsResponse =
+        shiftIds.length > 0
+          ? await apiClient.getShiftAssignments({ shift_ids: shiftIds })
+          : {
+              data: { shift_assignments: [], meta: { total: 0 } },
+              error: null,
+              status: 200,
+            };
+
+      const today = new Date();
+      const todayShifts =
+        shiftsResponse.data?.shifts.filter((shift) =>
+          isSameDay(new Date(shift.schedule.start_datetime), today)
+        ) || [];
+
+      setShifts(todayShifts);
+      setAssignments(assignmentsResponse.data?.shift_assignments || []);
+
+      const totalSlots = todayShifts.reduce(
+        (sum, shift) => sum + shift.capacity.slots_total,
+        0
+      );
+      const filledSlots = todayShifts.reduce(
+        (sum, shift) => sum + shift.capacity.slots_filled,
+        0
+      );
+      const openSlots = todayShifts.reduce(
+        (sum, shift) => sum + shift.capacity.slots_available,
+        0
+      );
+
+      setStats({
+        totalShifts: todayShifts.length,
+        workersScheduled: filledSlots,
+        openSlots,
+        fillRate: totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0,
+      });
+    } catch (error) {
+      console.error("Failed to fetch admin dashboard data:", error);
+      if (error instanceof Error) {
+        setError(error.message || "Failed to load dashboard");
+      } else {
+        setError("Failed to load dashboard");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (hasFetchedRef.current) {
       return;
     }
     hasFetchedRef.current = true;
-
-    async function fetchData() {
-      try {
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const [shiftsResponse, assignmentsResponse] = await Promise.all([
-          apiClient.getShifts({
-            start_date: startOfDay.toISOString(),
-            end_date: endOfDay.toISOString(),
-          }),
-          apiClient.getShiftAssignments(),
-        ]);
-
-        const today = new Date();
-        const todayShifts =
-          shiftsResponse.data?.shifts.filter((shift) =>
-            isSameDay(new Date(shift.schedule.start_datetime), today)
-          ) || [];
-
-        setShifts(todayShifts);
-        setAssignments(assignmentsResponse.data?.shift_assignments || []);
-
-        const totalSlots = todayShifts.reduce(
-          (sum, shift) => sum + shift.capacity.slots_total,
-          0
-        );
-        const filledSlots = todayShifts.reduce(
-          (sum, shift) => sum + shift.capacity.slots_filled,
-          0
-        );
-        const openSlots = todayShifts.reduce(
-          (sum, shift) => sum + shift.capacity.slots_available,
-          0
-        );
-
-        setStats({
-          totalShifts: todayShifts.length,
-          workersScheduled: filledSlots,
-          openSlots,
-          fillRate: totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0,
-        });
-      } catch (error) {
-        console.error("Failed to fetch admin dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const assignmentsByShift = useMemo(() => {
     const map = new Map<number, ShiftAssignment[]>();
@@ -212,6 +230,15 @@ export default function AdminDashboard() {
     return (
       <div className="p-4 lg:p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-8 flex flex-col items-center justify-center min-h-[400px] text-center gap-4">
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button onClick={fetchData}>Retry</Button>
       </div>
     );
   }
