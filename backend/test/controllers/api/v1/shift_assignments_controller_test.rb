@@ -305,6 +305,21 @@ class Api::V1::ShiftAssignmentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "employer", assignment.reload.cancelled_by
   end
 
+  test "admin can cancel assignment for any company shift" do
+    admin_user = create(:user, :admin)
+    other_company = create(:company)
+    other_shift = create(:shift, :recruiting, company: other_company)
+    other_worker = create(:worker_profile, :onboarded)
+    other_assignment = create(:shift_assignment, :offered, shift: other_shift, worker_profile: other_worker)
+
+    post "/api/v1/shift_assignments/#{other_assignment.id}/cancel",
+         params: { reason: "Admin cancelled" },
+         headers: auth_headers(admin_user)
+
+    assert_response :success
+    assert_equal "admin", other_assignment.reload.cancelled_by
+  end
+
   test "cannot cancel completed assignment" do
     @assignment.update!(status: :completed)
 

@@ -7,3 +7,18 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+if !Rails.env.production?
+  admin_email = "admin@michaelwales.com"
+  admin_password = "password"
+
+  admin_user = User.find_or_initialize_by(email: admin_email)
+  if admin_user.new_record?
+    admin_user.role = :admin
+    admin_user.password = admin_password
+    admin_user.password_confirmation = admin_password
+    admin_user.save!
+  else
+    admin_user.update!(role: :admin)
+  end
+end

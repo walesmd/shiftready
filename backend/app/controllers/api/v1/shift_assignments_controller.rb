@@ -155,6 +155,8 @@ module Api
           return if employer_company_id.present? && employer_company_id == assignment_company_id
         elsif current_user.admin?
           return
+        else
+          return render_error('Unsupported role for cancellation', :forbidden)
         end
 
         render_error('You do not have permission to modify this assignment', :forbidden)

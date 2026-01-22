@@ -35,7 +35,13 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(role === "worker" ? "/dashboard/worker" : "/dashboard/employer");
+      if (role === "worker") {
+        router.push("/dashboard/worker");
+      } else if (role === "employer") {
+        router.push("/dashboard/employer");
+      } else {
+        router.push("/dashboard/admin");
+      }
     } else {
       setError(result.error || "Login failed. Please check your credentials.");
     }
