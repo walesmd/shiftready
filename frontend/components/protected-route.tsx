@@ -25,7 +25,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         } else if (user.role === "employer") {
           router.push("/dashboard/employer");
         } else {
-          router.push("/");
+          router.push("/dashboard/admin");
         }
       }
     }

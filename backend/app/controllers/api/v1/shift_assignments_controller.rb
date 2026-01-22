@@ -28,6 +28,17 @@ module Api
         assignments = assignments.where(status: params[:status]) if params[:status].present?
         assignments = assignments.where(shift_id: params[:shift_id]) if params[:shift_id].present?
 
+        if params[:shift_ids].present?
+          shift_ids = parse_shift_ids
+          assignments = shift_ids.empty? ? assignments.none : assignments.where(shift_id: shift_ids)
+        end
+
+        if params[:start_date].present? || params[:end_date].present?
+          assignments = assignments.joins(:shift)
+          assignments = assignments.where('shifts.start_datetime >= ?', params[:start_date]) if params[:start_date].present?
+          assignments = assignments.where('shifts.start_datetime <= ?', params[:end_date]) if params[:end_date].present?
+        end
+
         assignments = assignments.order(assigned_at: :desc).limit(100)
 
         render json: {
@@ -155,6 +166,8 @@ module Api
           return if employer_company_id.present? && employer_company_id == assignment_company_id
         elsif current_user.admin?
           return
+        else
+          return render_error('Unsupported role for cancellation', :forbidden)
         end
 
         render_error('You do not have permission to modify this assignment', :forbidden)
@@ -221,6 +234,12 @@ module Api
           created_at: assignment.created_at,
           updated_at: assignment.updated_at
         }
+      end
+
+      def parse_shift_ids
+        raw_ids = params[:shift_ids]
+        ids = raw_ids.is_a?(Array) ? raw_ids : raw_ids.to_s.split(',')
+        ids.map { |id| Integer(id, exception: false) }.compact.uniq
       end
 
       def shift_summary(shift)

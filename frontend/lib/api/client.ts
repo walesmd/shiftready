@@ -216,12 +216,23 @@ class ApiClient {
   }
 
   // Shift Assignment endpoints
-  async getShiftAssignments(params?: { status?: string; shift_id?: number }) {
+  async getShiftAssignments(params?: {
+    status?: string;
+    shift_id?: number;
+    shift_ids?: number[];
+    start_date?: string;
+    end_date?: string;
+  }) {
     const queryString = params
       ? "?" +
         Object.entries(params)
           .filter(([_, v]) => v !== undefined)
-          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .map(([k, v]) => {
+            if (Array.isArray(v)) {
+              return `${k}=${encodeURIComponent(v.join(","))}`;
+            }
+            return `${k}=${encodeURIComponent(v)}`;
+          })
           .join("&")
       : "";
     return this.request<{
