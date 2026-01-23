@@ -201,9 +201,9 @@ export default function AdminShiftsPage() {
         <CardContent className="p-4">
           <div className="flex flex-col lg:flex-row lg:items-end gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium text-foreground">Company</label>
+              <label htmlFor="company-filter" className="text-sm font-medium text-foreground">Company</label>
               <Select value={selectedCompany} onValueChange={handleCompanyChange}>
-                <SelectTrigger className="mt-2 bg-card">
+                <SelectTrigger id="company-filter" className="mt-2 bg-card">
                   <SelectValue placeholder="All companies" />
                 </SelectTrigger>
                 <SelectContent>
