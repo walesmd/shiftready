@@ -18,7 +18,7 @@ Rails.application.routes.draw do
       end
 
       # Worker profiles
-      resources :workers, controller: 'worker_profiles', only: [:create] do
+      resources :workers, controller: 'worker_profiles', only: [:create, :index] do
         collection do
           get 'me', to: 'worker_profiles#show'
           patch 'me', to: 'worker_profiles#update'

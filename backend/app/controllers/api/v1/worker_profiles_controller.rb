@@ -3,8 +3,38 @@
 module Api
   module V1
     class WorkerProfilesController < BaseController
+      before_action :ensure_admin, only: [:index]
       before_action :ensure_worker_role, only: [:create, :update]
       before_action :set_worker_profile, only: [:show, :update]
+
+      # GET /api/v1/workers
+      def index
+        workers = WorkerProfile.includes(:user, shift_assignments: { shift: :company })
+        workers = apply_status_filter(workers)
+
+        total_count = workers.count
+        page = params[:page].to_i
+        page = 1 if page < 1
+        per_page = params[:per_page].to_i
+        per_page = 12 if per_page < 1
+        per_page = 200 if per_page > 200
+
+        workers = workers
+                  .order(Arel.sql(status_rank_sql))
+                  .order(:last_name, :first_name)
+                  .offset((page - 1) * per_page)
+                  .limit(per_page)
+
+        render json: {
+          workers: workers.map { |profile| worker_summary(profile) },
+          meta: {
+            total: total_count,
+            page: page,
+            per_page: per_page,
+            total_pages: (total_count / per_page.to_f).ceil
+          }
+        }
+      end
 
       # POST /api/v1/workers
       def create
@@ -57,6 +87,10 @@ module Api
         unless current_user.worker?
           render_error('Only workers can access this endpoint', :forbidden)
         end
+      end
+
+      def ensure_admin
+        render_error('Only admins can access this endpoint', :forbidden) unless current_user.admin?
       end
 
       def set_worker_profile
@@ -229,6 +263,80 @@ module Api
           is_active: profile.is_active,
           created_at: profile.created_at,
           updated_at: profile.updated_at
+        }
+      end
+
+      def apply_status_filter(scope)
+        case params[:status]
+        when 'active'
+          scope.where(is_active: true, onboarding_completed: true)
+        when 'onboarding'
+          scope.where(onboarding_completed: false)
+        when 'inactive'
+          scope.where(is_active: false)
+        else
+          scope
+        end
+      end
+
+      def status_rank_sql
+        <<~SQL.squish
+          CASE
+            WHEN worker_profiles.is_active = TRUE AND worker_profiles.onboarding_completed = TRUE THEN 0
+            WHEN worker_profiles.is_active = FALSE THEN 1
+            ELSE 2
+          END
+        SQL
+      end
+
+      def worker_summary(profile)
+        last_assignment = last_completed_assignment(profile)
+        last_shift = last_assignment ? last_shift_payload(last_assignment) : nil
+
+        {
+          id: profile.id,
+          user_id: profile.user_id,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          full_name: profile.full_name,
+          phone: profile.phone,
+          onboarding_completed: profile.onboarding_completed,
+          is_active: profile.is_active,
+          status: worker_status(profile),
+          total_shifts_completed: profile.total_shifts_completed,
+          last_shift: last_shift
+        }
+      end
+
+      def worker_status(profile)
+        return 'active' if profile.is_active && profile.onboarding_completed
+        return 'onboarding' unless profile.onboarding_completed
+
+        'inactive'
+      end
+
+      def last_completed_assignment(profile)
+        completed = profile.shift_assignments.select(&:completed?)
+        return nil if completed.empty?
+
+        completed.max_by do |assignment|
+          assignment.timesheet_approved_at ||
+            assignment.checked_out_at ||
+            assignment.shift&.completed_at ||
+            assignment.shift&.end_datetime ||
+            assignment.assigned_at
+        end
+      end
+
+      def last_shift_payload(assignment)
+        shift = assignment.shift
+        return nil unless shift
+
+        {
+          date: assignment.timesheet_approved_at || assignment.checked_out_at || shift.completed_at || shift.end_datetime,
+          role: shift.title,
+          job_type: shift.job_type,
+          company_name: shift.company&.name
         }
       end
     end
