@@ -5,7 +5,7 @@ I’m reaching out because we’re working with San Antonio companies that occas
 Quick question:
 When you have a last-minute staffing gap (call-outs, sudden demand, short projects), how do you usually handle it today?
 
-We’re building a platform to enable local on-demand staffing service where:
+We're building a platform to enable a local on-demand staffing service where:
 
 * You tell us what you need (role, headcount, time)
 * Workers confirm instantly

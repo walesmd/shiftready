@@ -173,23 +173,37 @@ export default function EmployerDashboard() {
 
     async function fetchData() {
       try {
-        // Fetch all data in parallel
-        const [profileResponse, shiftsResponse, activitiesResponse] = await Promise.all([
+        // Fetch all data in parallel while allowing partial success
+        const [profileResult, shiftsResult, activitiesResult] = await Promise.allSettled([
           apiClient.getEmployerProfile(),
           apiClient.getShifts({ status: "posted,recruiting,filled,in_progress" }),
           apiClient.getActivities(10),
         ]);
 
-        if (profileResponse.data) {
-          setProfile(profileResponse.data);
+        if (profileResult.status === "fulfilled") {
+          const profileResponse = profileResult.value;
+          if (profileResponse.data) {
+            setProfile(profileResponse.data);
+          }
+        } else {
+          console.error("Failed to fetch employer profile", profileResult.reason);
+          setProfile(null);
         }
 
-        if (activitiesResponse.data) {
-          setActivities(activitiesResponse.data.activities);
+        if (activitiesResult.status === "fulfilled") {
+          const activitiesResponse = activitiesResult.value;
+          if (activitiesResponse.data) {
+            setActivities(activitiesResponse.data.activities);
+          }
+        } else {
+          console.error("Failed to fetch employer activities", activitiesResult.reason);
+          setActivities([]);
         }
 
-        if (shiftsResponse.data) {
-          const upcomingShifts = shiftsResponse.data.shifts
+        if (shiftsResult.status === "fulfilled") {
+          const shiftsResponse = shiftsResult.value;
+          if (shiftsResponse.data) {
+            const upcomingShifts = shiftsResponse.data.shifts
             .filter((shift) => new Date(shift.schedule.start_datetime) >= new Date())
             .sort(
               (a, b) =>
@@ -198,45 +212,55 @@ export default function EmployerDashboard() {
             )
             .slice(0, 4);
 
-          setShifts(upcomingShifts);
+            setShifts(upcomingShifts);
 
-          // Calculate stats
-          const activeShiftsCount = shiftsResponse.data.shifts.filter(
-            (s) => ["posted", "recruiting", "filled", "in_progress"].includes(s.status)
-          ).length;
+            // Calculate stats
+            const activeShiftsCount = shiftsResponse.data.shifts.filter(
+              (s) => ["posted", "recruiting", "filled", "in_progress"].includes(s.status)
+            ).length;
 
-          const workersCount = shiftsResponse.data.shifts.reduce(
-            (sum, s) => sum + s.capacity.slots_filled,
-            0
-          );
+            const workersCount = shiftsResponse.data.shifts.reduce(
+              (sum, s) => sum + s.capacity.slots_filled,
+              0
+            );
 
-          const weekSpend = shiftsResponse.data.shifts
-            .filter((s) => {
-              const shiftDate = new Date(s.schedule.start_datetime);
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              return shiftDate >= weekAgo && s.status === "completed";
-            })
-            .reduce((sum, s) => sum + s.pay.estimated_total, 0);
+            const weekSpend = shiftsResponse.data.shifts
+              .filter((s) => {
+                const shiftDate = new Date(s.schedule.start_datetime);
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return shiftDate >= weekAgo && s.status === "completed";
+              })
+              .reduce((sum, s) => sum + s.pay.estimated_total, 0);
 
-          const fillableShifts = shiftsResponse.data.shifts.filter(
-            (s) => s.capacity.slots_total > 0
-          );
-          const fillRate =
-            fillableShifts.length > 0
-              ? (fillableShifts.reduce(
-                  (sum, s) => sum + (s.capacity.slots_filled / s.capacity.slots_total),
-                  0
-                ) /
-                  fillableShifts.length) *
-                100
-              : 0;
+            const fillableShifts = shiftsResponse.data.shifts.filter(
+              (s) => s.capacity.slots_total > 0
+            );
+            const fillRate =
+              fillableShifts.length > 0
+                ? (fillableShifts.reduce(
+                    (sum, s) => sum + (s.capacity.slots_filled / s.capacity.slots_total),
+                    0
+                  ) /
+                    fillableShifts.length) *
+                  100
+                : 0;
 
+            setStats({
+              activeShifts: activeShiftsCount,
+              workersEngaged: workersCount,
+              weekSpend,
+              fillRate: Math.round(fillRate),
+            });
+          }
+        } else {
+          console.error("Failed to fetch employer shifts", shiftsResult.reason);
+          setShifts([]);
           setStats({
-            activeShifts: activeShiftsCount,
-            workersEngaged: workersCount,
-            weekSpend,
-            fillRate: Math.round(fillRate),
+            activeShifts: 0,
+            workersEngaged: 0,
+            weekSpend: 0,
+            fillRate: 0,
           });
         }
       } catch (error) {

@@ -64,6 +64,7 @@ module Api
         activities = []
         limit = (params[:limit] || 20).to_i
         company = employer_profile.company
+        return [] unless company
 
         # Get recent shift assignments for company shifts
         assignments = ShiftAssignment
@@ -108,8 +109,8 @@ module Api
 
       # Worker activity helpers
       def assignment_activities_for_worker(assignment)
-        activities = []
         shift = assignment.shift
+        return activities unless shift
 
         case assignment.status
         when 'offered'
@@ -118,7 +119,7 @@ module Api
             type: 'shift_offer',
             icon: 'briefcase',
             title: 'Shift offer received',
-            description: "#{shift.title} at #{shift.work_location.name}",
+            description: "#{shift.title} at #{shift.work_location&.name || 'Unknown location'}",
             timestamp: assignment.assigned_at&.iso8601,
             status: 'pending',
             metadata: {
@@ -277,6 +278,7 @@ module Api
         activities = []
         shift = assignment.shift
         worker_name = assignment.worker_profile&.full_name || 'Unknown worker'
+        return activities unless shift
 
         case assignment.status
         when 'accepted'
@@ -434,21 +436,24 @@ module Api
         activities = []
         shift = assignment.shift
         worker_name = assignment.worker_profile&.full_name || 'Unknown'
-        company_name = shift.company&.name || 'Unknown'
+        shift_title = shift&.title || 'Unknown shift'
+        company_name = shift&.company&.name || 'Unknown'
+        shift_id = shift&.id
+        company_id = shift&.company_id
 
         activities << {
           id: "assignment-#{assignment.id}-#{assignment.status}",
           type: "assignment_#{assignment.status}",
           icon: status_icon(assignment.status),
           title: "#{worker_name} - #{assignment.status.titleize}",
-          description: "#{shift.title} at #{company_name}",
+          description: "#{shift_title} at #{company_name}",
           timestamp: assignment.updated_at&.iso8601,
           status: status_type(assignment.status),
           metadata: {
-            shift_id: shift.id,
+            shift_id: shift_id,
             assignment_id: assignment.id,
             worker_id: assignment.worker_profile_id,
-            company_id: shift.company_id
+            company_id: company_id
           }
         }
 
