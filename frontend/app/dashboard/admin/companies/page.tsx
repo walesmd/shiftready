@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Building2, Calendar, Loader2, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,41 +49,41 @@ export default function AdminCompaniesPage() {
   const [totalCompanies, setTotalCompanies] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const lastRequestKeyRef = useRef<string | null>(null);
 
-  const fetchCompanies = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.getCompanies({ page, per_page: PER_PAGE });
-      if (response.error) {
-        setError(response.error);
-        setLoading(false);
-        return;
-      }
-
-      const data = response.data;
-      setCompanies(data?.companies ?? []);
-      setTotalCompanies(data?.meta.total ?? 0);
-      setTotalPages(Math.max(1, data?.meta.total_pages ?? 1));
-      setLoading(false);
-    } catch (err) {
-      console.error("Failed to load companies", err);
-      setError("Failed to load companies");
-      setLoading(false);
-    }
-  }, [page]);
-
   useEffect(() => {
-    const requestKey = `page:${page}`;
+    const requestKey = `page:${page}:reload:${reloadKey}`;
     if (lastRequestKeyRef.current === requestKey) {
       return;
     }
     lastRequestKeyRef.current = requestKey;
 
-    void fetchCompanies();
-  }, [fetchCompanies]);
+    const loadCompanies = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiClient.getCompanies({ page, per_page: PER_PAGE });
+        if (response.error) {
+          setError(response.error);
+          return;
+        }
+
+        const data = response.data;
+        setCompanies(data?.companies ?? []);
+        setTotalCompanies(data?.meta.total ?? 0);
+        setTotalPages(Math.max(1, data?.meta.total_pages ?? 1));
+      } catch (err) {
+        console.error("Failed to load companies", err);
+        setError("Failed to load companies");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadCompanies();
+  }, [page, reloadKey]);
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
@@ -114,7 +114,7 @@ export default function AdminCompaniesPage() {
       ) : error ? (
         <div className="p-4 lg:p-8 flex flex-col items-center justify-center min-h-[300px] text-center gap-4">
           <p className="text-sm text-muted-foreground">{error}</p>
-          <Button onClick={fetchCompanies}>Retry</Button>
+          <Button onClick={() => setReloadKey((prev) => prev + 1)}>Retry</Button>
         </div>
       ) : (
         <Card>

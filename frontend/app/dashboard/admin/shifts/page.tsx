@@ -131,9 +131,13 @@ export default function AdminShiftsPage() {
   }, [selectedCompany]);
 
   const fetchCompanies = useCallback(async () => {
-    const companiesResponse = await apiClient.getCompanies();
-    if (companiesResponse.data) {
-      setCompanies(companiesResponse.data.companies);
+    try {
+      const companiesResponse = await apiClient.getCompanies();
+      if (companiesResponse.data) {
+        setCompanies(companiesResponse.data.companies);
+      }
+    } catch (err) {
+      console.error("Failed to load companies", err);
     }
   }, []);
 
@@ -141,49 +145,48 @@ export default function AdminShiftsPage() {
     setLoading(true);
     setError(null);
 
-    const startDateIso = selectedDate
-      ? new Date(`${selectedDate}T00:00:00`).toISOString()
-      : undefined;
-    const endDateIso = selectedDate
-      ? new Date(`${selectedDate}T23:59:59`).toISOString()
-      : undefined;
+    try {
+      const startDateIso = selectedDate
+        ? new Date(`${selectedDate}T00:00:00`).toISOString()
+        : undefined;
+      const endDateIso = selectedDate
+        ? new Date(`${selectedDate}T23:59:59`).toISOString()
+        : undefined;
 
-    const shiftsResponse = await apiClient.getShifts({
-      company_id: filteredCompanyId,
-      status: selectedStatus === "all" ? undefined : selectedStatus,
-      start_date: startDateIso,
-      end_date: endDateIso,
-      page,
-      per_page: PER_PAGE,
-      direction: "desc",
-    });
+      const shiftsResponse = await apiClient.getShifts({
+        company_id: filteredCompanyId,
+        status: selectedStatus === "all" ? undefined : selectedStatus,
+        start_date: startDateIso,
+        end_date: endDateIso,
+        page,
+        per_page: PER_PAGE,
+        direction: "desc",
+      });
 
-    if (shiftsResponse.error) {
-      setError(shiftsResponse.error);
+      if (shiftsResponse.error) {
+        setError(shiftsResponse.error);
+        return;
+      }
+
+      const data = shiftsResponse.data;
+      const nextTotalPages = Math.max(1, data?.meta.total_pages ?? 1);
+      setShifts(data?.shifts ?? []);
+      setTotalShifts(data?.meta.total ?? 0);
+      setTotalPages(nextTotalPages);
+    } catch (err) {
+      console.error("Failed to load shifts", err);
+      setError("Failed to load shifts");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const data = shiftsResponse.data;
-    const nextTotalPages = Math.max(1, data?.meta.total_pages ?? 1);
-    setShifts(data?.shifts ?? []);
-    setTotalShifts(data?.meta.total ?? 0);
-    setTotalPages(nextTotalPages);
-    setLoading(false);
   }, [filteredCompanyId, page, selectedStatus, selectedDate]);
 
   useEffect(() => {
-    fetchCompanies().catch((fetchError) => {
-      console.error("Failed to load companies", fetchError);
-    });
+    void fetchCompanies();
   }, [fetchCompanies]);
 
   useEffect(() => {
-    fetchShifts().catch((fetchError) => {
-      console.error("Failed to load shifts", fetchError);
-      setError("Failed to load shifts");
-      setLoading(false);
-    });
+    void fetchShifts();
   }, [fetchShifts]);
 
   return (
