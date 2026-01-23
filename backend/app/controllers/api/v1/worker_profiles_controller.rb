@@ -273,7 +273,7 @@ module Api
         when 'onboarding'
           scope.where(onboarding_completed: false)
         when 'inactive'
-          scope.where(is_active: false)
+          scope.where(is_active: false, onboarding_completed: true)
         else
           scope
         end
