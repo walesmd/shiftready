@@ -109,6 +109,7 @@ module Api
 
       # Worker activity helpers
       def assignment_activities_for_worker(assignment)
+        activities = []
         shift = assignment.shift
         return activities unless shift
 
