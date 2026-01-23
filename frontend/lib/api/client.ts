@@ -344,6 +344,14 @@ class ApiClient {
       body: { work_location: locationData },
     });
   }
+
+  // Activity endpoints
+  async getActivities(limit?: number) {
+    const queryString = limit ? `?limit=${limit}` : "";
+    return this.request<{ activities: Activity[]; meta: { total: number } }>(
+      `/api/v1/activities${queryString}`
+    );
+  }
 }
 
 export interface User {
@@ -668,6 +676,17 @@ export interface CreateWorkLocationData {
   longitude?: number;
   arrival_instructions?: string;
   parking_notes?: string;
+}
+
+export interface Activity {
+  id: string;
+  type: string;
+  icon: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  status: "pending" | "success" | "error" | "info" | "neutral";
+  metadata?: Record<string, unknown>;
 }
 
 export const apiClient = new ApiClient(API_URL);

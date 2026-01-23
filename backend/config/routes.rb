@@ -61,6 +61,9 @@ Rails.application.routes.draw do
           post :approve_timesheet
         end
       end
+
+      # Activities (recent activity feed)
+      resources :activities, only: [:index]
     end
   end
 

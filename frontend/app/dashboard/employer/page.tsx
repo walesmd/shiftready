@@ -13,11 +13,19 @@ import {
   Clock,
   MapPin,
   CheckCircle2,
+  CheckCircle,
   AlertCircle,
   Loader2,
+  UserCheck,
+  UserX,
+  LogIn,
+  XCircle,
+  Clipboard,
+  CalendarCheck,
+  Briefcase,
 } from "lucide-react";
 import Link from "next/link";
-import { apiClient, type Shift, type EmployerProfile } from "@/lib/api/client";
+import { apiClient, type Shift, type EmployerProfile, type Activity } from "@/lib/api/client";
 import { useAuth } from "@/contexts/auth-context";
 
 interface DashboardStats {
@@ -85,10 +93,69 @@ function formatTime(dateString: string): string {
   });
 }
 
+function getActivityIcon(iconName: string) {
+  const iconProps = { className: "w-4 h-4" };
+  switch (iconName) {
+    case "user-check":
+      return <UserCheck {...iconProps} />;
+    case "user-x":
+      return <UserX {...iconProps} />;
+    case "check-circle":
+      return <CheckCircle {...iconProps} />;
+    case "x-circle":
+      return <XCircle {...iconProps} />;
+    case "log-in":
+      return <LogIn {...iconProps} />;
+    case "alert-circle":
+      return <AlertCircle {...iconProps} />;
+    case "calendar-check":
+      return <CalendarCheck {...iconProps} />;
+    case "clipboard":
+      return <Clipboard {...iconProps} />;
+    case "users":
+      return <Users {...iconProps} />;
+    case "briefcase":
+      return <Briefcase {...iconProps} />;
+    default:
+      return <Calendar {...iconProps} />;
+  }
+}
+
+function getActivityStatusColor(status: string) {
+  switch (status) {
+    case "success":
+      return "bg-green-100 text-green-700";
+    case "error":
+      return "bg-red-100 text-red-700";
+    case "pending":
+      return "bg-amber-100 text-amber-700";
+    case "info":
+      return "bg-blue-100 text-blue-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
+
+function formatRelativeTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export default function EmployerDashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<EmployerProfile | null>(null);
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     activeShifts: 0,
     workersEngaged: 0,
@@ -106,19 +173,37 @@ export default function EmployerDashboard() {
 
     async function fetchData() {
       try {
-        // Fetch employer profile
-        const profileResponse = await apiClient.getEmployerProfile();
-        if (profileResponse.data) {
-          setProfile(profileResponse.data);
+        // Fetch all data in parallel while allowing partial success
+        const [profileResult, shiftsResult, activitiesResult] = await Promise.allSettled([
+          apiClient.getEmployerProfile(),
+          apiClient.getShifts({ status: "posted,recruiting,filled,in_progress" }),
+          apiClient.getActivities(10),
+        ]);
+
+        if (profileResult.status === "fulfilled") {
+          const profileResponse = profileResult.value;
+          if (profileResponse.data) {
+            setProfile(profileResponse.data);
+          }
+        } else {
+          console.error("Failed to fetch employer profile", profileResult.reason);
+          setProfile(null);
         }
 
-        // Fetch upcoming shifts (posted, recruiting, filled, in_progress)
-        const shiftsResponse = await apiClient.getShifts({
-          status: "posted,recruiting,filled,in_progress",
-        });
+        if (activitiesResult.status === "fulfilled") {
+          const activitiesResponse = activitiesResult.value;
+          if (activitiesResponse.data) {
+            setActivities(activitiesResponse.data.activities);
+          }
+        } else {
+          console.error("Failed to fetch employer activities", activitiesResult.reason);
+          setActivities([]);
+        }
 
-        if (shiftsResponse.data) {
-          const upcomingShifts = shiftsResponse.data.shifts
+        if (shiftsResult.status === "fulfilled") {
+          const shiftsResponse = shiftsResult.value;
+          if (shiftsResponse.data) {
+            const upcomingShifts = shiftsResponse.data.shifts
             .filter((shift) => new Date(shift.schedule.start_datetime) >= new Date())
             .sort(
               (a, b) =>
@@ -127,45 +212,55 @@ export default function EmployerDashboard() {
             )
             .slice(0, 4);
 
-          setShifts(upcomingShifts);
+            setShifts(upcomingShifts);
 
-          // Calculate stats
-          const activeShiftsCount = shiftsResponse.data.shifts.filter(
-            (s) => ["posted", "recruiting", "filled", "in_progress"].includes(s.status)
-          ).length;
+            // Calculate stats
+            const activeShiftsCount = shiftsResponse.data.shifts.filter(
+              (s) => ["posted", "recruiting", "filled", "in_progress"].includes(s.status)
+            ).length;
 
-          const workersCount = shiftsResponse.data.shifts.reduce(
-            (sum, s) => sum + s.capacity.slots_filled,
-            0
-          );
+            const workersCount = shiftsResponse.data.shifts.reduce(
+              (sum, s) => sum + s.capacity.slots_filled,
+              0
+            );
 
-          const weekSpend = shiftsResponse.data.shifts
-            .filter((s) => {
-              const shiftDate = new Date(s.schedule.start_datetime);
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              return shiftDate >= weekAgo && s.status === "completed";
-            })
-            .reduce((sum, s) => sum + s.pay.estimated_total, 0);
+            const weekSpend = shiftsResponse.data.shifts
+              .filter((s) => {
+                const shiftDate = new Date(s.schedule.start_datetime);
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return shiftDate >= weekAgo && s.status === "completed";
+              })
+              .reduce((sum, s) => sum + s.pay.estimated_total, 0);
 
-          const fillableShifts = shiftsResponse.data.shifts.filter(
-            (s) => s.capacity.slots_total > 0
-          );
-          const fillRate =
-            fillableShifts.length > 0
-              ? (fillableShifts.reduce(
-                  (sum, s) => sum + (s.capacity.slots_filled / s.capacity.slots_total),
-                  0
-                ) /
-                  fillableShifts.length) *
-                100
-              : 0;
+            const fillableShifts = shiftsResponse.data.shifts.filter(
+              (s) => s.capacity.slots_total > 0
+            );
+            const fillRate =
+              fillableShifts.length > 0
+                ? (fillableShifts.reduce(
+                    (sum, s) => sum + (s.capacity.slots_filled / s.capacity.slots_total),
+                    0
+                  ) /
+                    fillableShifts.length) *
+                  100
+                : 0;
 
+            setStats({
+              activeShifts: activeShiftsCount,
+              workersEngaged: workersCount,
+              weekSpend,
+              fillRate: Math.round(fillRate),
+            });
+          }
+        } else {
+          console.error("Failed to fetch employer shifts", shiftsResult.reason);
+          setShifts([]);
           setStats({
-            activeShifts: activeShiftsCount,
-            workersEngaged: workersCount,
-            weekSpend,
-            fillRate: Math.round(fillRate),
+            activeShifts: 0,
+            workersEngaged: 0,
+            weekSpend: 0,
+            fillRate: 0,
           });
         }
       } catch (error) {
@@ -324,9 +419,41 @@ export default function EmployerDashboard() {
             <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">Activity feed coming soon</p>
-            </div>
+            {activities.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No recent activity</p>
+                <p className="text-sm mt-1">Activity will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activities.slice(0, 8).map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getActivityStatusColor(
+                        activity.status
+                      )}`}
+                    >
+                      {getActivityIcon(activity.icon)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {activity.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {activity.description}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatRelativeTime(activity.timestamp)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
