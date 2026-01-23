@@ -165,6 +165,9 @@ class ApiClient {
     company_id?: number;
     start_date?: string;
     end_date?: string;
+    page?: number;
+    per_page?: number;
+    direction?: "asc" | "desc";
   }) {
     const queryString = params
       ? "?" +
@@ -173,7 +176,10 @@ class ApiClient {
           .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
           .join("&")
       : "";
-    return this.request<{ shifts: Shift[]; meta: { total: number } }>(
+    return this.request<{
+      shifts: Shift[];
+      meta: { total: number; page?: number; per_page?: number; total_pages?: number };
+    }>(
       `/api/v1/shifts${queryString}`
     );
   }

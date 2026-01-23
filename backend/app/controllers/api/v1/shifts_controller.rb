@@ -28,12 +28,26 @@ module Api
           shifts = shifts.where(company_id: current_user.employer_profile.company_id)
         end
 
-        shifts = shifts.order(start_datetime: :asc).limit(100)
+        total_count = shifts.count
+        page = params[:page].to_i
+        page = 1 if page < 1
+        per_page = params[:per_page].to_i
+        per_page = 100 if per_page < 1
+        per_page = 200 if per_page > 200
+        direction = params[:direction].to_s.downcase == 'desc' ? :desc : :asc
+
+        shifts = shifts
+                 .order(start_datetime: direction)
+                 .offset((page - 1) * per_page)
+                 .limit(per_page)
 
         render json: {
           shifts: shifts.map { |shift| shift_response(shift) },
           meta: {
-            total: shifts.count
+            total: total_count,
+            page: page,
+            per_page: per_page,
+            total_pages: (total_count / per_page.to_f).ceil
           }
         }
       end
