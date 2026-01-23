@@ -55,18 +55,24 @@ export default function AdminCompaniesPage() {
     setLoading(true);
     setError(null);
 
-    const response = await apiClient.getCompanies({ page, per_page: PER_PAGE });
-    if (response.error) {
-      setError(response.error);
-      setLoading(false);
-      return;
-    }
+    try {
+      const response = await apiClient.getCompanies({ page, per_page: PER_PAGE });
+      if (response.error) {
+        setError(response.error);
+        setLoading(false);
+        return;
+      }
 
-    const data = response.data;
-    setCompanies(data?.companies ?? []);
-    setTotalCompanies(data?.meta.total ?? 0);
-    setTotalPages(Math.max(1, data?.meta.total_pages ?? 1));
-    setLoading(false);
+      const data = response.data;
+      setCompanies(data?.companies ?? []);
+      setTotalCompanies(data?.meta.total ?? 0);
+      setTotalPages(Math.max(1, data?.meta.total_pages ?? 1));
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load companies", err);
+      setError("Failed to load companies");
+      setLoading(false);
+    }
   }, [page]);
 
   useEffect(() => {
@@ -76,11 +82,7 @@ export default function AdminCompaniesPage() {
     }
     lastRequestKeyRef.current = requestKey;
 
-    fetchCompanies().catch((fetchError) => {
-      console.error("Failed to load companies", fetchError);
-      setError("Failed to load companies");
-      setLoading(false);
-    });
+    void fetchCompanies();
   }, [fetchCompanies]);
 
   return (
