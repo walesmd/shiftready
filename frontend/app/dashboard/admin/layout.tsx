@@ -8,7 +8,6 @@ import { ProtectedRoute } from "@/components/protected-route";
 import {
   Building2,
   Calendar,
-  Briefcase,
   LayoutDashboard,
   Settings,
   LogOut,
@@ -30,7 +29,6 @@ import {
 const navigation = [
   { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
   { name: "Shifts", href: "/dashboard/admin/shifts", icon: Calendar },
-  { name: "Employers", href: "/dashboard/admin/employers", icon: Briefcase },
   { name: "Workers", href: "/dashboard/admin/workers", icon: Users },
   { name: "Companies", href: "/dashboard/admin/companies", icon: Building2 },
   { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },

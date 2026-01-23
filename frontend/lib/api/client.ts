@@ -318,10 +318,18 @@ class ApiClient {
   }
 
   // Company endpoints
-  async getCompanies() {
-    return this.request<{ companies: Company[]; meta: { total: number } }>(
-      "/api/v1/companies"
-    );
+  async getCompanies(params?: { page?: number; per_page?: number }) {
+    const queryString = params
+      ? "?" +
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&")
+      : "";
+    return this.request<{
+      companies: Company[];
+      meta: { total: number; page?: number; per_page?: number; total_pages?: number };
+    }>(`/api/v1/companies${queryString}`);
   }
 
   async getCompany(id: number) {
@@ -574,6 +582,16 @@ export interface Company {
     payment_terms: string | null;
   };
   is_active: boolean;
+  shift_summary?: {
+    total: number;
+    active: number;
+    by_status: {
+      posted: number;
+      recruiting: number;
+      in_progress: number;
+    };
+  };
+  last_shift_requested_at?: string | null;
   created_at: string;
   updated_at: string;
 }
