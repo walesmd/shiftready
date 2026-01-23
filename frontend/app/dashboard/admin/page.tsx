@@ -148,10 +148,7 @@ export default function AdminDashboard() {
         end_date: endOfDay.toISOString(),
       });
 
-      const shiftItems =
-        shiftsResponse.data?.shifts ??
-        (shiftsResponse.data as { items?: { id: number }[] } | null)?.items ??
-        [];
+      const shiftItems: Shift[] = shiftsResponse.data?.shifts ?? [];
       const shiftIds = shiftItems.map((shift) => shift.id);
       const assignmentsResponse =
         shiftIds.length > 0
@@ -163,10 +160,9 @@ export default function AdminDashboard() {
             };
 
       const today = new Date();
-      const todayShifts =
-        (shiftsResponse.data?.shifts ?? shiftItems).filter((shift: Shift) =>
-          isSameDay(new Date(shift.schedule.start_datetime), today)
-        ) || [];
+      const todayShifts = shiftItems.filter((shift) =>
+        isSameDay(new Date(shift.schedule.start_datetime), today)
+      );
 
       setShifts(todayShifts);
       setAssignments(assignmentsResponse.data?.shift_assignments || []);

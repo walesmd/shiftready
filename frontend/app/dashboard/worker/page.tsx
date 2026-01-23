@@ -13,8 +13,15 @@ import {
   TrendingUp,
   ArrowRight,
   Loader2,
+  Briefcase,
+  CheckCircle,
+  XCircle,
+  LogIn,
+  AlertCircle,
+  CalendarCheck,
+  AlertTriangle,
 } from "lucide-react";
-import { apiClient, type ShiftAssignment, type WorkerProfile } from "@/lib/api/client";
+import { apiClient, type ShiftAssignment, type WorkerProfile, type Activity } from "@/lib/api/client";
 import { useAuth } from "@/contexts/auth-context";
 
 interface DashboardStats {
@@ -95,10 +102,69 @@ function formatTime(dateString: string): string {
   });
 }
 
+function getActivityIcon(iconName: string) {
+  const iconProps = { className: "w-4 h-4" };
+  switch (iconName) {
+    case "briefcase":
+      return <Briefcase {...iconProps} />;
+    case "check-circle":
+      return <CheckCircle {...iconProps} />;
+    case "x-circle":
+      return <XCircle {...iconProps} />;
+    case "log-in":
+      return <LogIn {...iconProps} />;
+    case "alert-circle":
+      return <AlertCircle {...iconProps} />;
+    case "calendar-check":
+      return <CalendarCheck {...iconProps} />;
+    case "dollar-sign":
+      return <DollarSign {...iconProps} />;
+    case "clock":
+      return <Clock {...iconProps} />;
+    case "loader":
+      return <Loader2 {...iconProps} />;
+    case "alert-triangle":
+      return <AlertTriangle {...iconProps} />;
+    default:
+      return <Calendar {...iconProps} />;
+  }
+}
+
+function getActivityStatusColor(status: string) {
+  switch (status) {
+    case "success":
+      return "bg-green-100 text-green-700";
+    case "error":
+      return "bg-red-100 text-red-700";
+    case "pending":
+      return "bg-amber-100 text-amber-700";
+    case "info":
+      return "bg-blue-100 text-blue-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
+
+function formatRelativeTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export default function WorkerDashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<WorkerProfile | null>(null);
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     upcomingShifts: 0,
     completedShifts: 0,
@@ -116,12 +182,20 @@ export default function WorkerDashboard() {
 
     async function fetchData() {
       try {
-        const profileResponse = await apiClient.getWorkerProfile();
+        const [profileResponse, assignmentsResponse, activitiesResponse] = await Promise.all([
+          apiClient.getWorkerProfile(),
+          apiClient.getShiftAssignments(),
+          apiClient.getActivities(10),
+        ]);
+
         if (profileResponse.data) {
           setProfile(profileResponse.data);
         }
 
-        const assignmentsResponse = await apiClient.getShiftAssignments();
+        if (activitiesResponse.data) {
+          setActivities(activitiesResponse.data.activities);
+        }
+
         if (assignmentsResponse.data) {
           setAssignments(assignmentsResponse.data.shift_assignments);
 
@@ -308,9 +382,41 @@ export default function WorkerDashboard() {
             <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">Activity feed coming soon</p>
-            </div>
+            {activities.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No recent activity</p>
+                <p className="text-sm mt-1">Your activity will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activities.slice(0, 8).map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${getActivityStatusColor(
+                        activity.status
+                      )}`}
+                    >
+                      {getActivityIcon(activity.icon)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {activity.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {activity.description}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatRelativeTime(activity.timestamp)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
