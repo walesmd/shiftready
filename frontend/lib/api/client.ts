@@ -67,18 +67,32 @@ class ApiClient {
         this.setToken(authHeader.replace("Bearer ", ""));
       }
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: unknown = null;
+
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+      }
 
       if (!response.ok) {
         return {
           data: null,
-          error: data.error || data.errors?.join(", ") || "An error occurred",
+          error:
+            typeof data === "string"
+              ? data
+              : (data as { error?: string; errors?: string[] }).error ||
+                (data as { errors?: string[] }).errors?.join(", ") ||
+                "An error occurred",
           status: response.status,
         };
       }
 
       return {
-        data,
+        data: data as T,
         error: null,
         status: response.status,
       };
