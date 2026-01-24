@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_22_183715) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_24_154203) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,12 +39,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_22_183715) do
     t.string "industry"
     t.boolean "is_active", default: true
     t.string "name", null: false
+    t.bigint "owner_employer_profile_id"
     t.string "payment_terms"
     t.string "tax_id"
     t.text "typical_roles"
     t.datetime "updated_at", null: false
     t.string "workers_needed_per_week"
     t.index ["name"], name: "index_companies_on_name"
+    t.index ["owner_employer_profile_id"], name: "index_companies_on_owner_employer_profile_id"
   end
 
   create_table "employer_profiles", force: :cascade do |t|
@@ -302,6 +304,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_22_183715) do
     t.index ["zip_code"], name: "index_worker_profiles_on_zip_code"
   end
 
+  add_foreign_key "companies", "employer_profiles", column: "owner_employer_profile_id"
   add_foreign_key "employer_profiles", "companies"
   add_foreign_key "employer_profiles", "users"
   add_foreign_key "messages", "messages", column: "in_reply_to_message_id"

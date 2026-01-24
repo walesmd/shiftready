@@ -2,6 +2,7 @@
 
 class Company < ApplicationRecord
   # Associations
+  belongs_to :owner_employer_profile, class_name: 'EmployerProfile', optional: true
   has_many :employer_profiles, dependent: :restrict_with_error
   has_many :work_locations, dependent: :destroy
   has_many :shifts, dependent: :destroy
