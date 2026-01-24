@@ -85,7 +85,7 @@ class User < ApplicationRecord
     )
 
     # Create the employer profile with provided data or placeholders
-    create_employer_profile!(
+    employer_profile = create_employer_profile!(
       company: company,
       first_name: profile_attrs['first_name'] || email.split('@').first.capitalize,
       last_name: profile_attrs['last_name'] || 'User',
@@ -95,6 +95,9 @@ class User < ApplicationRecord
       msa_accepted_at: profile_attrs['msa_accepted_at'],
       onboarding_completed: false
     )
+
+    # Set the employer profile as the owner of the company
+    company.update!(owner_employer_profile: employer_profile)
   end
 
   def create_worker_profile_placeholder

@@ -4,6 +4,7 @@ class EmployerProfile < ApplicationRecord
   # Associations
   belongs_to :user
   belongs_to :company
+  has_one :owned_company, class_name: 'Company', foreign_key: :owner_employer_profile_id, inverse_of: :owner_employer_profile
   has_many :shifts, foreign_key: :created_by_employer_id, dependent: :restrict_with_error, inverse_of: :created_by_employer
   has_many :messages, as: :messageable
 

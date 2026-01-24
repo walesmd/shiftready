@@ -615,6 +615,10 @@ export interface Company {
     tax_id: string | null;
     payment_terms: string | null;
   };
+  owner: {
+    id: number;
+    full_name: string;
+  } | null;
   is_active: boolean;
   shift_summary?: {
     total: number;

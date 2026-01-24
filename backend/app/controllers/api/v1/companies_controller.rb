@@ -123,6 +123,10 @@ module Api
             tax_id: company.tax_id,
             payment_terms: company.payment_terms
           },
+          owner: company.owner_employer_profile ? {
+            id: company.owner_employer_profile.id,
+            full_name: company.owner_employer_profile.full_name
+          } : nil,
           is_active: company.is_active,
           shift_summary: {
             total: attributes['total_shift_count'].to_i,
@@ -150,7 +154,8 @@ module Api
         recruiting_status_id = Shift.statuses['recruiting']
         in_progress_status_id = Shift.statuses['in_progress']
 
-        scope.left_joins(:shifts)
+        scope.includes(:owner_employer_profile)
+             .left_joins(:shifts)
              .select(
                'companies.*',
                'MAX(shifts.created_at) AS last_shift_requested_at',
