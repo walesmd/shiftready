@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Building2, Calendar, Loader2, Users } from "lucide-react";
+import { Building2, Calendar, Loader2, User, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,7 @@ export default function AdminCompaniesPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                       {company.owner && (
                         <span className="flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" aria-hidden="true" />
                           Owner: {company.owner.full_name}
                         </span>
                       )}
