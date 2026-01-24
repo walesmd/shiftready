@@ -303,6 +303,21 @@ class ApiClient {
     return this.request<EmployerProfile>("/api/v1/employers/me");
   }
 
+  // Admin worker endpoints
+  async getWorkers(params?: { page?: number; per_page?: number; status?: string }) {
+    const queryString = params
+      ? "?" +
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&")
+      : "";
+    return this.request<{
+      workers: WorkerSummary[];
+      meta: { total: number; page?: number; per_page?: number; total_pages?: number };
+    }>(`/api/v1/workers${queryString}`);
+  }
+
   async createEmployerProfile(profileData: CreateEmployerProfileData) {
     return this.request<EmployerProfile>("/api/v1/employers", {
       method: "POST",
@@ -539,6 +554,25 @@ export interface WorkerProfile {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface WorkerSummary {
+  id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  phone: string;
+  onboarding_completed: boolean;
+  is_active: boolean;
+  status: "active" | "onboarding" | "inactive";
+  total_shifts_completed: number;
+  last_shift: {
+    date: string | null;
+    role: string | null;
+    job_type: string | null;
+    company_name: string | null;
+  } | null;
 }
 
 export interface EmployerProfile {
