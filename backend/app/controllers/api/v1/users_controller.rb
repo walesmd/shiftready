@@ -31,9 +31,9 @@ module Api
       private
 
       def password_change_requested?
-        params[:user]&.key?(:current_password) ||
-          params[:user]&.key?(:password) ||
-          params[:user]&.key?(:password_confirmation)
+        params[:user]&.dig(:current_password).present? ||
+          params[:user]&.dig(:password).present? ||
+          params[:user]&.dig(:password_confirmation).present?
       end
 
       def handle_password_change

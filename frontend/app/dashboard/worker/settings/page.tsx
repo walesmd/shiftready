@@ -15,10 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Validation schemas
 const profileSchema = z.object({
-  email: z.string().email("Invalid email address"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
   address_line_1: z.string().min(1, "Address is required"),
   address_line_2: z.string().optional(),
   city: z.string().min(1, "City is required"),
@@ -44,15 +42,17 @@ export default function SettingsPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
+  const [profileDisplay, setProfileDisplay] = useState({
+    email: "",
+    phone: "",
+  })
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      email: "",
       first_name: "",
       last_name: "",
-      phone: "",
       address_line_1: "",
       address_line_2: "",
       city: "",
@@ -78,16 +78,27 @@ export default function SettingsPage() {
       try {
         const response = await apiClient.getWorkerProfile()
         if (response.data && user) {
-          profileForm.reset({
+          const address = response.data.address ?? {
+            line_1: "",
+            line_2: "",
+            city: "",
+            state: "",
+            zip_code: "",
+          }
+
+          setProfileDisplay({
             email: user.email,
+            phone: response.data.phone || "",
+          })
+
+          profileForm.reset({
             first_name: response.data.first_name,
             last_name: response.data.last_name,
-            phone: response.data.phone,
-            address_line_1: response.data.address.line_1,
-            address_line_2: response.data.address.line_2 || "",
-            city: response.data.address.city,
-            state: response.data.address.state,
-            zip_code: response.data.address.zip_code,
+            address_line_1: address.line_1,
+            address_line_2: address.line_2 || "",
+            city: address.city,
+            state: address.state,
+            zip_code: address.zip_code,
           })
         }
       } catch (error) {
@@ -107,21 +118,10 @@ export default function SettingsPage() {
   const onSubmitProfile = async (data: ProfileFormData) => {
     setIsSubmittingProfile(true)
     try {
-      // Update email if changed
-      if (user && data.email !== user.email) {
-        const userResponse = await apiClient.updateCurrentUser(data.email)
-        if (userResponse.error) {
-          toast.error(userResponse.error)
-          setIsSubmittingProfile(false)
-          return
-        }
-      }
-
       // Update worker profile
       const profileResponse = await apiClient.updateWorkerProfile({
         first_name: data.first_name,
         last_name: data.last_name,
-        phone: data.phone,
         address_line_1: data.address_line_1,
         address_line_2: data.address_line_2 || undefined,
         city: data.city,
@@ -204,14 +204,10 @@ export default function SettingsPage() {
                 <Input
                   id="email"
                   type="email"
-                  {...profileForm.register("email")}
+                  value={profileDisplay.email}
+                  disabled
                   className="bg-card"
                 />
-                {profileForm.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {profileForm.formState.errors.email.message}
-                  </p>
-                )}
               </div>
 
               {/* Phone */}
@@ -220,14 +216,10 @@ export default function SettingsPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  {...profileForm.register("phone")}
+                  value={profileDisplay.phone}
+                  disabled
                   className="bg-card"
                 />
-                {profileForm.formState.errors.phone && (
-                  <p className="text-sm text-destructive">
-                    {profileForm.formState.errors.phone.message}
-                  </p>
-                )}
               </div>
 
               {/* First Name */}

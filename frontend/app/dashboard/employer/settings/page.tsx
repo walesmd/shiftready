@@ -15,10 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Validation schemas
 const profileSchema = z.object({
-  email: z.string().email("Invalid email address"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
 })
 
 const passwordSchema = z.object({
@@ -39,15 +37,17 @@ export default function SettingsPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false)
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false)
+  const [profileDisplay, setProfileDisplay] = useState({
+    email: "",
+    phone: "",
+  })
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      email: "",
       first_name: "",
       last_name: "",
-      phone: "",
     },
   })
 
@@ -68,11 +68,14 @@ export default function SettingsPage() {
       try {
         const response = await apiClient.getEmployerProfile()
         if (response.data && user) {
-          profileForm.reset({
+          setProfileDisplay({
             email: user.email,
+            phone: response.data.phone || "",
+          })
+
+          profileForm.reset({
             first_name: response.data.first_name,
             last_name: response.data.last_name,
-            phone: response.data.phone,
           })
         }
       } catch (error) {
@@ -92,21 +95,10 @@ export default function SettingsPage() {
   const onSubmitProfile = async (data: ProfileFormData) => {
     setIsSubmittingProfile(true)
     try {
-      // Update email if changed
-      if (user && data.email !== user.email) {
-        const userResponse = await apiClient.updateCurrentUser(data.email)
-        if (userResponse.error) {
-          toast.error(userResponse.error)
-          setIsSubmittingProfile(false)
-          return
-        }
-      }
-
       // Update employer profile
       const profileResponse = await apiClient.updateEmployerProfile({
         first_name: data.first_name,
         last_name: data.last_name,
-        phone: data.phone,
       })
 
       if (profileResponse.error) {
@@ -184,14 +176,10 @@ export default function SettingsPage() {
                 <Input
                   id="email"
                   type="email"
-                  {...profileForm.register("email")}
+                  value={profileDisplay.email}
+                  disabled
                   className="bg-card"
                 />
-                {profileForm.formState.errors.email && (
-                  <p className="text-sm text-destructive">
-                    {profileForm.formState.errors.email.message}
-                  </p>
-                )}
               </div>
 
               {/* Phone */}
@@ -200,14 +188,10 @@ export default function SettingsPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  {...profileForm.register("phone")}
+                  value={profileDisplay.phone}
+                  disabled
                   className="bg-card"
                 />
-                {profileForm.formState.errors.phone && (
-                  <p className="text-sm text-destructive">
-                    {profileForm.formState.errors.phone.message}
-                  </p>
-                )}
               </div>
 
               {/* First Name */}
