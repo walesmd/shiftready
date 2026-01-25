@@ -386,8 +386,14 @@ class ApiClient {
   }
 
   // Work Location endpoints
-  async getWorkLocations(companyId?: number) {
-    const queryString = companyId ? `?company_id=${companyId}` : "";
+  async getWorkLocations(params?: { company_id?: number; include_inactive?: boolean }) {
+    const queryString = params
+      ? "?" +
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&")
+      : "";
     return this.request<{
       work_locations: WorkLocation[];
       meta: { total: number };
@@ -398,6 +404,19 @@ class ApiClient {
     return this.request<WorkLocation>("/api/v1/work_locations", {
       method: "POST",
       body: { work_location: locationData },
+    });
+  }
+
+  async updateWorkLocation(id: number, locationData: UpdateWorkLocationData) {
+    return this.request<WorkLocation>(`/api/v1/work_locations/${id}`, {
+      method: "PATCH",
+      body: { work_location: locationData },
+    });
+  }
+
+  async deleteWorkLocation(id: number) {
+    return this.request<void>(`/api/v1/work_locations/${id}`, {
+      method: "DELETE",
     });
   }
 
@@ -765,6 +784,20 @@ export interface CreateWorkLocationData {
   longitude?: number;
   arrival_instructions?: string;
   parking_notes?: string;
+}
+
+export interface UpdateWorkLocationData {
+  name?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  latitude?: number;
+  longitude?: number;
+  arrival_instructions?: string;
+  parking_notes?: string;
+  is_active?: boolean;
 }
 
 export interface Activity {

@@ -9,7 +9,8 @@ module Api
 
       # GET /api/v1/work_locations
       def index
-        locations = WorkLocation.active
+        # Include inactive locations if requested (default: only active)
+        locations = params[:include_inactive].to_s == "true" ? WorkLocation.all : WorkLocation.active
 
         # Filter by company if specified
         locations = locations.where(company_id: params[:company_id]) if params[:company_id].present?
@@ -19,7 +20,8 @@ module Api
           locations = locations.where(company_id: current_user.employer_profile.company_id)
         end
 
-        locations = locations.order(:name).limit(100)
+        # Order: active first, then alphabetically by name
+        locations = locations.order(is_active: :desc, name: :asc).limit(100)
 
         render json: {
           work_locations: locations.map { |location| work_location_response(location) },
