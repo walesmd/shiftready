@@ -30,6 +30,27 @@ GET /api/v1/auth/me
 Returns: Current user profile
 ```
 
+### Update Current User
+```
+PATCH /api/v1/auth/me
+Body: { user: { email } }
+Returns: Updated user profile
+```
+
+### Change Password
+```
+PATCH /api/v1/auth/me
+Body: {
+  user: {
+    current_password,
+    password,
+    password_confirmation
+  }
+}
+Returns: Success message
+Note: Regenerates JTI to invalidate old tokens
+```
+
 ---
 
 ## Worker Profiles
@@ -179,15 +200,21 @@ Note: Cannot delete if location has shifts
 ```
 GET /api/v1/shifts
 Query params:
-  - status: draft, posted, recruiting, filled, in_progress, completed, cancelled
+  - status: Single status or comma-separated statuses
+    (draft, posted, recruiting, filled, in_progress, completed, cancelled)
+    Example: "posted,recruiting,filled"
   - job_type: warehouse, moving, event_setup, etc.
   - company_id: filter by company
   - start_date: filter by start date (ISO 8601)
   - end_date: filter by end date (ISO 8601)
+  - page: page number (default: 1)
+  - per_page: items per page (default: 100, max: 200)
+  - direction: sort direction (asc/desc, default: asc)
 
 Returns: List of shifts (filtered by user role)
 - Workers see: posted, recruiting shifts only
 - Employers see: their company's shifts only
+- Admins see: all shifts
 ```
 
 ### Get Shift

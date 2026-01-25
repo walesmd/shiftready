@@ -12,7 +12,11 @@ module Api
         shifts = Shift.includes(:company, :work_location, :created_by_employer)
 
         # Apply filters
-        shifts = shifts.where(status: params[:status]) if params[:status].present?
+        if params[:status].present?
+          # Parse comma-separated status values into an array
+          status_values = params[:status].to_s.split(',').map(&:strip)
+          shifts = shifts.where(status: status_values)
+        end
         shifts = shifts.where(job_type: params[:job_type]) if params[:job_type].present?
         shifts = shifts.where(company_id: params[:company_id]) if params[:company_id].present?
         shifts = shifts.where('start_datetime >= ?', params[:start_date]) if params[:start_date].present?
