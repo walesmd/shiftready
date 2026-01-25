@@ -30,6 +30,27 @@ GET /api/v1/auth/me
 Returns: Current user profile
 ```
 
+### Update Current User
+```
+PATCH /api/v1/auth/me
+Body: { user: { email } }
+Returns: Updated user profile
+```
+
+### Change Password
+```
+PATCH /api/v1/auth/me
+Body: {
+  user: {
+    current_password,
+    password,
+    password_confirmation
+  }
+}
+Returns: Success message
+Note: Regenerates JTI to invalidate old tokens
+```
+
 ---
 
 ## Worker Profiles

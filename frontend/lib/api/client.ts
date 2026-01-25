@@ -172,6 +172,19 @@ class ApiClient {
     });
   }
 
+  async updatePassword(currentPassword: string, newPassword: string, passwordConfirmation: string) {
+    return this.request<{ message: string }>("/api/v1/auth/me", {
+      method: "PATCH",
+      body: {
+        user: {
+          current_password: currentPassword,
+          password: newPassword,
+          password_confirmation: passwordConfirmation,
+        },
+      },
+    });
+  }
+
   // Shift endpoints
   async getShifts(params?: {
     status?: string;
