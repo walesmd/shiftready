@@ -15,7 +15,11 @@ const workLocationSchema = z.object({
   address_line_1: z.string().min(1, "Street address is required"),
   address_line_2: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(2, "State is required").max(2, "Use 2-letter state code"),
+  state: z
+    .string()
+    .min(2, "State is required")
+    .max(2, "Use 2-letter state code")
+    .transform((value) => value.toUpperCase()),
   zip_code: z.string().min(5, "Valid ZIP code required").max(10, "Valid ZIP code required"),
   arrival_instructions: z.string().optional(),
   parking_notes: z.string().optional(),

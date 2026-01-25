@@ -36,6 +36,8 @@ Lines 87-106
 4) filled (auto transition when slots filled)
 Transition: recruiting -> filled (also posted -> filled)
 Trigger: ShiftAssignment#accept! increments slots_filled; after update, Shift#check_if_filled auto-sets status to filled if status is posted or recruiting.
+Race condition risk: ShiftAssignment#accept! currently does update! then shift.increment!(:slots_filled) and Shift#check_if_filled reads slots_filled to call Shift#mark_as_filled!, which creates a TOCTOU window if multiple accepts happen concurrently. This can over-fill slots and/or miss the transition to filled depending on timing.
+Mitigation guidance: move the slots_filled increment + status check into a single DB transaction with row-level locking on the Shift row (e.g., SELECT ... FOR UPDATE), or use an atomic DB constraint (slots_filled <= slots_total) and/or optimistic locking on Shift to prevent over-filling. Add a DB-level constraint/index enforcing slots_filled <= slots_total as a safety net for async processors.
 shift_assignment.rb
 Lines 49-61
   def accept!(method: :sms)    return false unless offered?    transaction do      update!(        status: :accepted,        accepted_at: Time.current,        response_received_at: Time.current,        response_method: method,        response_value: :accepted      )      shift.increment!(:slots_filled)    end  end

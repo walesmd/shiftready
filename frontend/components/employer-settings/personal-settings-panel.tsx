@@ -61,11 +61,16 @@ export function PersonalSettingsPanel() {
   })
 
   useEffect(() => {
+    if (!user) {
+      setIsLoadingProfile(false)
+      return
+    }
+
     const loadProfile = async () => {
       setIsLoadingProfile(true)
       try {
         const response = await apiClient.getEmployerProfile()
-        if (response.data && user) {
+        if (response.data) {
           setProfileDisplay({
             email: user.email,
             phone: response.data.phone || "",
@@ -84,9 +89,7 @@ export function PersonalSettingsPanel() {
       }
     }
 
-    if (user) {
-      loadProfile()
-    }
+    loadProfile()
   }, [user, profileForm])
 
   const onSubmitProfile = async (data: ProfileFormData) => {
