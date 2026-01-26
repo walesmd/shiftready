@@ -118,8 +118,15 @@ module Api
           industry: company.industry,
           billing_info: {
             email: company.billing_email,
-            phone: company.billing_phone,
-            address: company.full_billing_address
+            phone: company.billing_phone_display,
+            address: company.full_billing_address,
+            address_line_1: company.billing_address_line_1,
+            address_line_2: company.billing_address_line_2,
+            city: company.billing_city,
+            state: company.billing_state,
+            zip_code: company.billing_zip_code,
+            latitude: company.billing_latitude,
+            longitude: company.billing_longitude
           },
           tax_info: {
             tax_id: company.tax_id,

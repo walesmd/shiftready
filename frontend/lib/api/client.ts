@@ -385,6 +385,13 @@ class ApiClient {
     });
   }
 
+  async updateCompany(id: number, companyData: UpdateCompanyData) {
+    return this.request<Company>(`/api/v1/companies/${id}`, {
+      method: "PATCH",
+      body: { company: companyData },
+    });
+  }
+
   // Work Location endpoints
   async getWorkLocations(params?: { company_id?: number; include_inactive?: boolean }) {
     const queryString = params
@@ -656,6 +663,13 @@ export interface Company {
     email: string | null;
     phone: string | null;
     address: string;
+    address_line_1: string | null;
+    address_line_2: string | null;
+    city: string | null;
+    state: string | null;
+    zip_code: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   tax_info: {
     tax_id: string | null;
@@ -761,6 +775,20 @@ export interface CreateEmployerProfileData {
 
 export interface CreateCompanyData {
   name: string;
+  industry?: string;
+  billing_email?: string;
+  billing_phone?: string;
+  billing_address_line_1?: string;
+  billing_address_line_2?: string;
+  billing_city?: string;
+  billing_state?: string;
+  billing_zip_code?: string;
+  tax_id?: string;
+  payment_terms?: string;
+}
+
+export interface UpdateCompanyData {
+  name?: string;
   industry?: string;
   billing_email?: string;
   billing_phone?: string;
