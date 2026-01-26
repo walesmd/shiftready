@@ -30,6 +30,8 @@ class WorkLocation < ApplicationRecord
   private
 
   def update_company_onboarding_status
-    company&.refresh_onboarding_status!
+    return if company.nil? || company.destroyed?
+
+    company.refresh_onboarding_status!
   end
 end

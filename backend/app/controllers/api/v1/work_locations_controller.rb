@@ -64,10 +64,6 @@ module Api
 
       # DELETE /api/v1/work_locations/:id
       def destroy
-        if @work_location.shifts.exists?
-          return render_error('Cannot delete location with existing shifts', :unprocessable_entity)
-        end
-
         company = @work_location.company
 
         company.with_lock do
@@ -77,11 +73,17 @@ module Api
             return render_error('Work location not found', :not_found)
           end
 
+          if @work_location.shifts.exists?
+            return render_error('Cannot delete location with existing shifts', :unprocessable_entity)
+          end
+
           if company.work_locations.reload.size <= 1
             return render_error('Cannot delete the last work location. Companies must have at least one location.', :unprocessable_entity)
           end
 
-          @work_location.destroy
+          unless @work_location.destroy
+            return render_error(@work_location.errors.full_messages, :unprocessable_entity)
+          end
         end
 
         head :no_content
