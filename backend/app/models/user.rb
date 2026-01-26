@@ -72,7 +72,7 @@ class User < ApplicationRecord
     profile_attrs = instance_variable_get(:@employer_profile_attributes) || {}
 
     # Create company with provided data or placeholders
-    company = Company.create!(
+    company = Company.create(
       name: company_attrs['name'] || "#{email.split('@').first}'s Company",
       industry: company_attrs['industry'],
       billing_address_line_1: company_attrs['billing_address_line_1'],
@@ -84,8 +84,16 @@ class User < ApplicationRecord
       is_active: false # Set to inactive until onboarding is complete
     )
 
+    # If company creation failed, bubble up errors
+    unless company.persisted?
+      company.errors.full_messages.each do |message|
+        errors.add(:base, "Company #{message}")
+      end
+      raise ActiveRecord::Rollback
+    end
+
     # Create the employer profile with provided data or placeholders
-    employer_profile = create_employer_profile!(
+    employer_profile = build_employer_profile(
       company: company,
       first_name: profile_attrs['first_name'] || email.split('@').first.capitalize,
       last_name: profile_attrs['last_name'] || 'User',
@@ -96,8 +104,21 @@ class User < ApplicationRecord
       onboarding_completed: false
     )
 
+    # Validate and save the employer profile
+    unless employer_profile.save
+      employer_profile.errors.full_messages.each do |message|
+        errors.add(:base, message)
+      end
+      raise ActiveRecord::Rollback
+    end
+
     # Set the employer profile as the owner of the company
-    company.update!(owner_employer_profile: employer_profile)
+    unless company.update(owner_employer_profile: employer_profile)
+      company.errors.full_messages.each do |message|
+        errors.add(:base, "Company #{message}")
+      end
+      raise ActiveRecord::Rollback
+    end
   end
 
   def create_worker_profile_placeholder
