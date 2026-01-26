@@ -233,7 +233,7 @@ module Api
           first_name: profile.first_name,
           last_name: profile.last_name,
           full_name: profile.full_name,
-          phone: profile.phone,
+          phone: profile.phone_display,
           address: {
             line_1: profile.address_line_1,
             line_2: profile.address_line_2,
@@ -299,7 +299,7 @@ module Api
           first_name: profile.first_name,
           last_name: profile.last_name,
           full_name: profile.full_name,
-          phone: profile.phone,
+          phone: profile.phone_display,
           onboarding_completed: profile.onboarding_completed,
           is_active: profile.is_active,
           status: worker_status(profile),

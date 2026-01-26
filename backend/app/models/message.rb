@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class Message < ApplicationRecord
+  include PhoneNormalizable
+
+  # Configure to normalize from_phone and to_phone fields
+  normalize_phone_fields :from_phone, :to_phone
+
   # Associations
   belongs_to :messageable, polymorphic: true
   belongs_to :shift, optional: true
@@ -133,6 +138,14 @@ class Message < ApplicationRecord
   def short_body(length = 100)
     return body if body.length <= length
     "#{body[0..length]}..."
+  end
+
+  def from_phone_display
+    PhoneNormalizationService.format_display(from_phone)
+  end
+
+  def to_phone_display
+    PhoneNormalizationService.format_display(to_phone)
   end
 
   private

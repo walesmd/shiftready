@@ -127,4 +127,15 @@ class EmployerProfileTest < ActiveSupport::TestCase
     profile = create(:employer_profile, onboarding_completed: true, can_approve_timesheets: false)
     assert_not profile.can_approve_shift_timesheets?
   end
+
+  # Phone display formatting
+  test "phone_display returns formatted phone number" do
+    profile = build(:employer_profile, phone: "+12105551234")
+    assert_equal "(210) 555-1234", profile.phone_display
+  end
+
+  test "phone_display handles nil phone gracefully" do
+    profile = build(:employer_profile, phone: nil)
+    assert_nil profile.phone_display
+  end
 end

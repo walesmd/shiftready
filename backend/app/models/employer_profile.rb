@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class EmployerProfile < ApplicationRecord
+  include PhoneNormalizable
+
   # Associations
   belongs_to :user
   belongs_to :company
@@ -10,7 +12,7 @@ class EmployerProfile < ApplicationRecord
 
   # Validations
   validates :first_name, :last_name, :phone, presence: true
-  validates :phone, format: { with: /\A\+?[1-9]\d{1,14}\z/, message: 'must be a valid phone number' }
+  validates :phone, format: { with: /\A\+1\d{10}\z/, message: 'must be a valid phone number' }
 
   # Scopes
   scope :onboarded, -> { where(onboarding_completed: true) }
@@ -29,5 +31,9 @@ class EmployerProfile < ApplicationRecord
 
   def can_approve_shift_timesheets?
     onboarding_completed? && can_approve_timesheets?
+  end
+
+  def phone_display
+    PhoneNormalizationService.format_display(phone)
   end
 end

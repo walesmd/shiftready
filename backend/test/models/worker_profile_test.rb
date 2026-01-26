@@ -349,4 +349,15 @@ class WorkerProfileTest < ActiveSupport::TestCase
 
     assert_not_includes WorkerProfile.available_at(monday_10am), profile
   end
+
+  # Phone display formatting
+  test "phone_display returns formatted phone number" do
+    profile = build(:worker_profile, phone: "+12105551234")
+    assert_equal "(210) 555-1234", profile.phone_display
+  end
+
+  test "phone_display handles nil phone gracefully" do
+    profile = build(:worker_profile, phone: nil)
+    assert_nil profile.phone_display
+  end
 end
