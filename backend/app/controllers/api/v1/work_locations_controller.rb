@@ -82,7 +82,7 @@ module Api
           end
 
           unless @work_location.destroy
-            return render_error(@work_location.errors.full_messages, :unprocessable_entity)
+            return render_errors(@work_location.errors.full_messages, :unprocessable_entity)
           end
         end
 
