@@ -25,6 +25,7 @@ class GeocodingService
   end
 
   def geocode(address)
+    hash_address = 'unknown'
     hash_address = Digest::SHA256.hexdigest(address)[0, 12]
     response = make_request(address)
     parse_response(response)

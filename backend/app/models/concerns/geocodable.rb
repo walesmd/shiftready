@@ -25,7 +25,7 @@ module Geocodable
     class_attribute :geocodable_use_normalized_address, default: false
     class_attribute :geocodable_prefix, default: nil
 
-    after_validation :geocode_address, if: :should_geocode?
+    after_commit :enqueue_geocoding, on: %i[create update]
   end
 
   class_methods do
@@ -49,6 +49,12 @@ module Geocodable
     # 2. At least one address field has changed
     # 3. Required address fields are present
     errors.empty? && address_changed? && required_address_present?
+  end
+
+  def enqueue_geocoding
+    return unless should_geocode?
+
+    GeocodeAddressJob.perform_later(self.class.name, id)
   end
 
   def address_changed?

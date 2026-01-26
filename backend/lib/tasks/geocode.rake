@@ -9,6 +9,9 @@ namespace :geocode do
     # Backfill WorkerProfiles
     worker_profiles = WorkerProfile.where('latitude IS NULL OR longitude IS NULL')
                                    .where.not(address_line_1: nil)
+                                   .where.not(city: nil)
+                                   .where.not(state: nil)
+                                   .where.not(zip_code: nil)
     puts "Found #{worker_profiles.count} worker profiles without coordinates"
 
     worker_profiles.find_each do |profile|
@@ -37,6 +40,9 @@ namespace :geocode do
     # Backfill WorkLocations
     work_locations = WorkLocation.where('latitude IS NULL OR longitude IS NULL')
                                  .where.not(address_line_1: nil)
+                                 .where.not(city: nil)
+                                 .where.not(state: nil)
+                                 .where.not(zip_code: nil)
     puts "Found #{work_locations.count} work locations without coordinates"
 
     work_locations.find_each do |location|
@@ -61,6 +67,9 @@ namespace :geocode do
     # Backfill Companies (billing addresses)
     companies = Company.where('billing_latitude IS NULL OR billing_longitude IS NULL')
                        .where.not(billing_address_line_1: nil)
+                       .where.not(billing_city: nil)
+                       .where.not(billing_state: nil)
+                       .where.not(billing_zip_code: nil)
     puts "Found #{companies.count} companies without billing coordinates"
 
     companies.find_each do |company|
