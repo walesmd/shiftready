@@ -11,7 +11,7 @@ class Company < ApplicationRecord
   normalize_phone_fields :billing_phone
 
   # Callbacks
-  after_save :update_active_status, if: :saved_change_to_billing_or_work_locations?
+  after_save :update_active_status, if: :saved_change_to_billing_fields?
   after_commit :update_employer_onboarding_status
 
   # Associations
@@ -76,9 +76,14 @@ class Company < ApplicationRecord
     }
   end
 
+  def refresh_onboarding_status!
+    update_active_status
+    update_employer_onboarding_status
+  end
+
   private
 
-  def saved_change_to_billing_or_work_locations?
+  def saved_change_to_billing_fields?
     saved_change_to_billing_address_line_1? ||
       saved_change_to_billing_city? ||
       saved_change_to_billing_state? ||

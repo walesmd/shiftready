@@ -340,18 +340,8 @@ export function WorkLocationsSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Work Location</AlertDialogTitle>
             <AlertDialogDescription>
-              {locations.length <= 1 ? (
-                <>
-                  You cannot delete your last work location. Companies must have at least one
-                  location. Add another location first if you want to delete &quot;
-                  {deleteConfirmLocation?.name}&quot;.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to delete &quot;{deleteConfirmLocation?.name}&quot;? This
-                  action cannot be undone.
-                </>
-              )}
+              Are you sure you want to delete &quot;{deleteConfirmLocation?.name}&quot;? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

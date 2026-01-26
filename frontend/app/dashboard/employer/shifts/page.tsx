@@ -96,12 +96,24 @@ export default function CreateShiftPage() {
     async function checkOnboardingAndFetchData() {
       try {
         // Check onboarding status first
-        const onboardingResponse = await apiClient.getEmployerOnboardingStatus();
+        let onboardingResponse;
+        try {
+          onboardingResponse = await apiClient.getEmployerOnboardingStatus();
+        } catch (err) {
+          toast.error("Complete onboarding first", {
+            description:
+              "We couldn't confirm your onboarding status. Please complete all onboarding steps before posting shifts.",
+            duration: 6000,
+          });
+          router.push("/dashboard/employer");
+          return;
+        }
 
-        if (onboardingResponse.data && !onboardingResponse.data.all_tasks_complete) {
+        if (onboardingResponse.data?.all_tasks_complete !== true) {
           // Onboarding not complete - redirect with warning
           toast.error("Complete onboarding first", {
-            description: "You must complete all onboarding steps before you can post shifts. Please add billing information and at least one work location.",
+            description:
+              "You must complete all onboarding steps before you can post shifts. Please add billing information and at least one work location.",
             duration: 6000,
           });
           router.push("/dashboard/employer");

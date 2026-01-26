@@ -4,7 +4,7 @@ class WorkLocation < ApplicationRecord
   include Geocodable
 
   # Callbacks
-  after_commit :update_company_onboarding_status
+  after_commit :update_company_onboarding_status, on: %i[create update destroy]
 
   # Associations
   belongs_to :company
@@ -30,7 +30,6 @@ class WorkLocation < ApplicationRecord
   private
 
   def update_company_onboarding_status
-    company&.send(:update_active_status)
-    company&.send(:update_employer_onboarding_status)
+    company&.refresh_onboarding_status!
   end
 end

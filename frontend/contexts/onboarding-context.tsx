@@ -21,17 +21,16 @@ export function OnboardingProvider({ children, userRole }: OnboardingProviderPro
   const [isLoading, setIsLoading] = useState(false);
 
   const refreshOnboardingStatus = useCallback(async () => {
+    if (userRole === "worker") {
+      // Worker onboarding - to be implemented later
+      // response = await apiClient.getWorkerOnboardingStatus();
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Fetch based on user role
-      let response;
-      if (userRole === "employer") {
-        response = await apiClient.getEmployerOnboardingStatus();
-      } else {
-        // Worker onboarding - to be implemented later
-        // response = await apiClient.getWorkerOnboardingStatus();
-        return;
-      }
+      const response = await apiClient.getEmployerOnboardingStatus();
 
       if (response.data && !response.error) {
         setOnboardingStatus(response.data);
