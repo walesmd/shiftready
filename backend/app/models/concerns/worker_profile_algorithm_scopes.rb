@@ -11,7 +11,7 @@ module WorkerProfileAlgorithmScopes
     }
 
     scope :with_coordinates, -> {
-      where.not(latitude: nil, longitude: nil)
+      where.not(latitude: nil).where.not(longitude: nil)
     }
 
     scope :not_blocked_by_company, ->(company) {
