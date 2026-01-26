@@ -47,16 +47,20 @@ namespace :geocode do
 
     work_locations.find_each do |location|
       print "  Geocoding work location #{location.id}... "
-      result = GeocodingService.geocode(location.full_address)
+      begin
+        result = GeocodingService.geocode(location.full_address)
 
-      if result
-        location.update_columns(
-          latitude: result[:latitude],
-          longitude: result[:longitude]
-        )
-        puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
-      else
-        puts "✗ Failed"
+        if result
+          location.update_columns(
+            latitude: result[:latitude],
+            longitude: result[:longitude]
+          )
+          puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
+        else
+          puts "✗ Failed"
+        end
+      rescue StandardError => e
+        puts "✗ Error: #{e.message}"
       end
 
       sleep 0.1 # Rate limiting
@@ -74,16 +78,20 @@ namespace :geocode do
 
     companies.find_each do |company|
       print "  Geocoding company #{company.id}... "
-      result = GeocodingService.geocode(company.full_billing_address)
+      begin
+        result = GeocodingService.geocode(company.full_billing_address)
 
-      if result
-        company.update_columns(
-          billing_latitude: result[:latitude],
-          billing_longitude: result[:longitude]
-        )
-        puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
-      else
-        puts "✗ Failed"
+        if result
+          company.update_columns(
+            billing_latitude: result[:latitude],
+            billing_longitude: result[:longitude]
+          )
+          puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
+        else
+          puts "✗ Failed"
+        end
+      rescue StandardError => e
+        puts "✗ Error: #{e.message}"
       end
 
       sleep 0.1 # Rate limiting
