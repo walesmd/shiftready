@@ -23,7 +23,7 @@ const billingSchema = z.object({
   billing_address_line_1: z.string(),
   billing_address_line_2: z.string(),
   billing_city: z.string(),
-  billing_state: z.string().length(2, "State must be 2 letters").or(z.literal("")),
+  billing_state: z.string().regex(/^[A-Za-z]{2}$/, "State must be 2 letters").or(z.literal("")),
   billing_zip_code: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid ZIP code").or(z.literal("")),
 })
 
@@ -61,6 +61,7 @@ export function CompanyBillingSection() {
         const profileResponse = await apiClient.getEmployerProfile()
         if (profileResponse.error || !profileResponse.data?.company_id) {
           toast.error("Failed to load company information")
+          setIsLoading(false)
           return
         }
 
@@ -68,6 +69,7 @@ export function CompanyBillingSection() {
         const companyResponse = await apiClient.getCompany(profileResponse.data.company_id)
         if (companyResponse.error || !companyResponse.data) {
           toast.error("Failed to load company billing information")
+          setIsLoading(false)
           return
         }
 
