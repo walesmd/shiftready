@@ -25,6 +25,10 @@ module Geocodable
     class_attribute :geocodable_use_normalized_address, default: false
     class_attribute :geocodable_prefix, default: nil
 
+    # Track whether geocoding is needed before the commit
+    attr_accessor :needs_geocoding
+
+    before_save :check_if_needs_geocoding
     after_commit :enqueue_geocoding, on: %i[create update]
   end
 
@@ -43,12 +47,19 @@ module Geocodable
 
   private
 
+  def check_if_needs_geocoding
+    # Check if geocoding is needed BEFORE the commit
+    # Store result in instance variable for use in after_commit callback
+    self.needs_geocoding = address_changed? && required_address_present?
+    true # Don't halt the save chain
+  end
+
   def should_geocode?
     # Only geocode if:
     # 1. Record is valid (no validation errors)
-    # 2. At least one address field has changed
-    # 3. Required address fields are present
-    errors.empty? && address_changed? && required_address_present?
+    # 2. We flagged that geocoding was needed before save
+    # 3. Record has been persisted (has an ID)
+    errors.empty? && needs_geocoding == true && persisted?
   end
 
   def enqueue_geocoding
