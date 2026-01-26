@@ -3,6 +3,7 @@
 class WorkerProfile < ApplicationRecord
   include WorkerProfileAlgorithmScopes
   include Geocodable
+  include PhoneNormalizable
 
   # Associations
   belongs_to :user
@@ -19,7 +20,7 @@ class WorkerProfile < ApplicationRecord
 
   # Validations
   validates :first_name, :last_name, :phone, :address_line_1, :city, :state, :zip_code, presence: true
-  validates :phone, uniqueness: true, format: { with: /\A\+?[1-9]\d{1,14}\z/, message: 'must be a valid phone number' }
+  validates :phone, uniqueness: true, format: { with: /\A\+1\d{10}\z/, message: 'must be a valid phone number' }
   validates :zip_code, format: { with: /\A\d{5}(-\d{4})?\z/, message: 'must be a valid ZIP code' }
   validates :state, length: { is: 2 }
   validates :average_rating, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 }, allow_nil: true
@@ -74,5 +75,9 @@ class WorkerProfile < ApplicationRecord
 
   def update_reliability_score!
     update(reliability_score: calculate_reliability_score)
+  end
+
+  def phone_display
+    PhoneNormalizationService.format_display(phone)
   end
 end

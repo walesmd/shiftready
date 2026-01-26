@@ -71,27 +71,33 @@ module Geocodable
 
     return unless result
 
-    # Always update coordinates
+    # Build update hash
+    updates = {}
     lat_field = "#{geocodable_prefix}latitude"
     lng_field = "#{geocodable_prefix}longitude"
-    send("#{lat_field}=", result[:latitude]) if respond_to?("#{lat_field}=")
-    send("#{lng_field}=", result[:longitude]) if respond_to?("#{lng_field}=")
+    updates[lat_field] = result[:latitude] if respond_to?("#{lat_field}=")
+    updates[lng_field] = result[:longitude] if respond_to?("#{lng_field}=")
 
     # Optionally update address with normalized version from API
     if geocodable_use_normalized_address
-      update_normalized_address(result)
+      updates.merge!(build_normalized_address_updates(result))
     end
+
+    # Persist changes to database (skip callbacks to avoid infinite loop)
+    update_columns(updates) if updates.any?
   rescue StandardError => e
     Rails.logger.error("Failed to geocode #{self.class.name} (ID: #{id}): #{e.message}")
     # Don't fail the save if geocoding fails
   end
 
-  def update_normalized_address(result)
-    send("#{field_with_prefix(:address_line_1)}=", result[:address_line_1]) if result[:address_line_1].present?
+  def build_normalized_address_updates(result)
+    updates = {}
+    updates[field_with_prefix(:address_line_1)] = result[:address_line_1] if result[:address_line_1].present?
     # Keep address_line_2 as is (user-provided)
-    send("#{field_with_prefix(:city)}=", result[:city]) if result[:city].present?
-    send("#{field_with_prefix(:state)}=", result[:state]) if result[:state].present?
-    send("#{field_with_prefix(:zip_code)}=", result[:zip_code]) if result[:zip_code].present?
+    updates[field_with_prefix(:city)] = result[:city] if result[:city].present?
+    updates[field_with_prefix(:state)] = result[:state] if result[:state].present?
+    updates[field_with_prefix(:zip_code)] = result[:zip_code] if result[:zip_code].present?
+    updates
   end
 
   def field_with_prefix(field)

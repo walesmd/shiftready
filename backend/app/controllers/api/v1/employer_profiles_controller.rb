@@ -80,7 +80,7 @@ module Api
           last_name: profile.last_name,
           full_name: profile.full_name,
           title: profile.title,
-          phone: profile.phone,
+          phone: profile.phone_display,
           onboarding_completed: profile.onboarding_completed,
           terms_accepted_at: profile.terms_accepted_at,
           msa_accepted_at: profile.msa_accepted_at,

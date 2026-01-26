@@ -113,6 +113,77 @@ class MyModel < ApplicationRecord
 end
 ```
 
+### Automatic Phone Number Normalization
+The platform automatically normalizes phone numbers to E.164 format (e.g., +12105550123) whenever phone numbers are saved.
+
+**How it works:**
+- Models with phone numbers include the `PhoneNormalizable` concern
+- When a phone number is saved, it's automatically normalized before validation
+- Strips punctuation, adds +1 country code if missing
+- Stores in consistent E.164 format
+- No developer action needed - it's automatic
+
+**Models with phone normalization:**
+- `WorkerProfile`: Normalizes worker phone number
+- `EmployerProfile`: Normalizes employer phone number
+- `Message`: Normalizes from_phone and to_phone for SMS routing
+
+**Implementation:**
+- Service: `app/services/phone_normalization_service.rb` - Handles phone number normalization
+- Concern: `app/models/concerns/phone_normalizable.rb` - Provides automatic normalization
+- Format: E.164 international format (+1XXXXXXXXXX for US numbers)
+
+**Supported input formats:**
+- (210) 555-0123
+- 210-555-0123
+- 210.555.0123
+- 2105550123
+- 12105550123
+- +12105550123
+
+**Customization:**
+```ruby
+class MyModel < ApplicationRecord
+  include PhoneNormalizable
+
+  # Optional: customize which fields to normalize
+  normalize_phone_fields :phone, :emergency_contact_phone, :alternate_phone
+end
+```
+
+**Display formatting:**
+
+All API responses automatically return phone numbers in display format (e.g., "(210) 555-0123") via model methods:
+
+```ruby
+# Backend - Model methods
+worker.phone          # => "+12105550123" (stored format)
+worker.phone_display  # => "(210) 555-0123" (display format)
+
+employer.phone          # => "+12105550123" (stored format)
+employer.phone_display  # => "(210) 555-0123" (display format)
+
+message.from_phone_display  # => "(210) 555-0123"
+message.to_phone_display    # => "(210) 555-0123"
+
+# Service method (used internally by models)
+PhoneNormalizationService.format_display('+12105550123')
+# => "(210) 555-0123"
+```
+
+Frontend utilities match backend behavior:
+
+```typescript
+// Frontend utilities (lib/phone.ts)
+import { formatPhoneDisplay, normalizePhoneNumber } from '@/lib/phone'
+
+// Format for display
+formatPhoneDisplay('+12105550123')  // => "(210) 555-0123"
+
+// Normalize user input
+normalizePhoneNumber('(210) 555-0123')  // => "+12105550123"
+```
+
 ## Domain Model
 
 ### Core Entities
