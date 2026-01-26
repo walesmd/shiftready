@@ -80,6 +80,39 @@ rails console        # Interactive console
 - Background jobs for async operations
 - JSON:API or similar serialization format
 
+## Features
+
+### Automatic Address Geocoding
+The platform automatically geocodes addresses using the Geocodio API whenever addresses are created or updated.
+
+**How it works:**
+- Models with addresses include the `Geocodable` concern
+- When an address is created or updated, it's automatically geocoded
+- Latitude and longitude are stored in the database
+- No developer action needed - it's automatic
+
+**Models with geocoding:**
+- `WorkerProfile`: Geocodes worker home address
+- `WorkLocation`: Geocodes work site addresses
+- `Company`: Geocodes billing address (with `billing_` prefix)
+
+**Implementation:**
+- Service: `app/services/geocoding_service.rb` - Handles Geocodio API calls
+- Concern: `app/models/concerns/geocodable.rb` - Provides automatic geocoding
+- Configuration: Set `GEOCODIO_API_KEY` in environment variables
+
+**Customization:**
+```ruby
+class MyModel < ApplicationRecord
+  include Geocodable
+
+  # Optional: customize behavior
+  geocodable address_fields: %i[address_line_1 city state zip_code],
+             use_normalized_address: true,  # Use Geocodio's normalized address
+             prefix: 'billing_'              # For billing_address_line_1, etc.
+end
+```
+
 ## Domain Model
 
 ### Core Entities
@@ -124,6 +157,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
 JWT_SECRET=...
+GEOCODIO_API_KEY=...
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...

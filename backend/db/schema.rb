@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_25_152722) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_26_033304) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -32,6 +32,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_152722) do
     t.string "billing_address_line_2"
     t.string "billing_city"
     t.string "billing_email"
+    t.decimal "billing_latitude", precision: 10, scale: 6
+    t.decimal "billing_longitude", precision: 10, scale: 6
     t.string "billing_phone"
     t.string "billing_state"
     t.string "billing_zip_code"
@@ -45,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_25_152722) do
     t.text "typical_roles"
     t.datetime "updated_at", null: false
     t.string "workers_needed_per_week"
+    t.index ["billing_latitude", "billing_longitude"], name: "index_companies_on_billing_coordinates"
     t.index ["name"], name: "index_companies_on_name"
     t.index ["owner_employer_profile_id"], name: "index_companies_on_owner_employer_profile_id"
   end

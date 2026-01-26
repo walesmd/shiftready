@@ -101,6 +101,8 @@ module Api
           :billing_city,
           :billing_state,
           :billing_zip_code,
+          :billing_latitude,
+          :billing_longitude,
           :tax_id,
           :payment_terms,
           :is_active

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class WorkLocation < ApplicationRecord
+  include Geocodable
+
   # Associations
   belongs_to :company
   has_many :shifts, dependent: :restrict_with_error
@@ -13,10 +15,6 @@ class WorkLocation < ApplicationRecord
   # Scopes
   scope :active, -> { where(is_active: true) }
   scope :for_company, ->(company_id) { where(company_id: company_id) }
-
-  # Geocoding support (will need geocoder gem)
-  # geocoded_by :full_address
-  # after_validation :geocode, if: ->(obj) { obj.address_line_1_changed? || obj.city_changed? || obj.state_changed? || obj.zip_code_changed? }
 
   def full_address
     [address_line_1, address_line_2, city, state, zip_code].compact.join(', ')
