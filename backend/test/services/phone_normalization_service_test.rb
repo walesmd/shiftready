@@ -142,9 +142,9 @@ class PhoneNormalizationServiceTest < ActiveSupport::TestCase
   end
 
   test "format_display handles 10-digit number" do
-    # Should add country code and format
+    # 10-digit numbers aren't in E.164 format (which requires country code)
     result = PhoneNormalizationService.format_display("2105550123")
-    # This has 10 digits, not 11, so it won't match the pattern
+    # format_display expects 11-digit E.164, so 10 digits returns as-is
     assert_equal "2105550123", result
   end
 end

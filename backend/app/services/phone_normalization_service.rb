@@ -47,7 +47,7 @@ class PhoneNormalizationService
       nil
     end
   rescue StandardError => e
-    Rails.logger.error("Phone normalization failed for input '#{phone_number}': #{e.message}")
+    Rails.logger.error("Phone normalization failed: #{e.message}")
     nil
   end
 

@@ -50,25 +50,27 @@ namespace :phone do
 
       # Normalize from_phone
       if message.from_phone.present? && !message.from_phone.match?(/\A\+1\d{10}\z/)
+        original_from = message.from_phone
         normalized_from = PhoneNormalizationService.normalize(message.from_phone)
-        if normalized_from.present? && normalized_from != message.from_phone
+        if normalized_from.present? && normalized_from != original_from
           message.update_column(:from_phone, normalized_from)
-          puts "Message #{message.id} from_phone: #{message.from_phone} -> #{normalized_from}"
+          puts "Message #{message.id} from_phone: #{original_from} -> #{normalized_from}"
           updated = true
         elsif normalized_from.nil?
-          puts "WARNING: Message #{message.id} has invalid from_phone: #{message.from_phone}"
+          puts "WARNING: Message #{message.id} has invalid from_phone: #{original_from}"
         end
       end
 
       # Normalize to_phone
       if message.to_phone.present? && !message.to_phone.match?(/\A\+1\d{10}\z/)
+        original_to = message.to_phone
         normalized_to = PhoneNormalizationService.normalize(message.to_phone)
-        if normalized_to.present? && normalized_to != message.to_phone
+        if normalized_to.present? && normalized_to != original_to
           message.update_column(:to_phone, normalized_to)
-          puts "Message #{message.id} to_phone: #{message.to_phone} -> #{normalized_to}"
+          puts "Message #{message.id} to_phone: #{original_to} -> #{normalized_to}"
           updated = true
         elsif normalized_to.nil?
-          puts "WARNING: Message #{message.id} has invalid to_phone: #{message.to_phone}"
+          puts "WARNING: Message #{message.id} has invalid to_phone: #{original_to}"
         end
       end
 
@@ -83,21 +85,36 @@ namespace :phone do
 
   desc "Validate all phone numbers in the database"
   task validate: :environment do
-    puts "Validating phone numbers..."
+    invalid_workers = []
+    WorkerProfile.where.not(phone: nil).find_each do |w|
+      invalid_workers << w unless w.phone.match?(/\A\+1\d{10}\z/)
+    end
 
-    invalid_workers = WorkerProfile.where.not(phone: nil).reject { |w| w.phone.match?(/\A\+1\d{10}\z/) }
-    invalid_employers = EmployerProfile.where.not(phone: nil).reject { |e| e.phone.match?(/\A\+1\d{10}\z/) }
-    invalid_messages = Message.where.not(from_phone: nil).or(Message.where.not(to_phone: nil))
-                              .select { |m| (m.from_phone.present? && !m.from_phone.match?(/\A\+1\d{10}\z/)) ||
-                                           (m.to_phone.present? && !m.to_phone.match?(/\A\+1\d{10}\z/)) }
+    invalid_employers = []
+    EmployerProfile.where.not(phone: nil).find_each do |e|
+      invalid_employers << e unless e.phone.match?(/\A\+1\d{10}\z/)
+    end
+
+    invalid_messages = []
+    Message.where.not(from_phone: nil).or(Message.where.not(to_phone: nil)).find_each do |m|
+      if (m.from_phone.present? && !m.from_phone.match?(/\A\+1\d{10}\z/)) ||
+         (m.to_phone.present? && !m.to_phone.match?(/\A\+1\d{10}\z/))
+        invalid_messages << m
+      end
+    end
 
     puts "\nValidation Results:"
     puts "Invalid WorkerProfile phones: #{invalid_workers.count}"
-    invalid_workers.each { |w| puts "  WorkerProfile #{w.id}: #{w.phone}" }
+    invalid_workers.first(10).each { |w| puts "  WorkerProfile #{w.id}: #{w.phone}" }
+    puts "  ... and #{invalid_workers.count - 10} more" if invalid_workers.count > 10
 
     puts "\nInvalid EmployerProfile phones: #{invalid_employers.count}"
-    invalid_employers.each { |e| puts "  EmployerProfile #{e.id}: #{e.phone}" }
+    invalid_employers.first(10).each { |e| puts "  EmployerProfile #{e.id}: #{e.phone}" }
+    puts "  ... and #{invalid_employers.count - 10} more" if invalid_employers.count > 10
 
+    puts "\nInvalid Message phones: #{invalid_messages.count}"
+    invalid_messages.first(10).each { |m| puts "  Message #{m.id}: from=#{m.from_phone}, to=#{m.to_phone}" }
+    puts "  ... and #{invalid_messages.count - 10} more" if invalid_messages.count > 10
     puts "\nInvalid Message phones: #{invalid_messages.count}"
     invalid_messages.each { |m| puts "  Message #{m.id}: from=#{m.from_phone}, to=#{m.to_phone}" }
 
