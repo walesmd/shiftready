@@ -184,6 +184,73 @@ formatPhoneDisplay('+12105550123')  // => "(210) 555-0123"
 normalizePhoneNumber('(210) 555-0123')  // => "+12105550123"
 ```
 
+### User Onboarding System
+
+The platform implements a reactive, reusable onboarding system that tracks task completion and guides users through required setup steps.
+
+**How it works:**
+- Onboarding status managed via React Context (`OnboardingContext`)
+- Displays progress card at top of dashboard until tasks are complete
+- Automatically updates when users complete tasks (no page refresh needed)
+- Backend tracks completion status and enforces requirements
+- Pattern is reusable across all user types (employer, worker, admin)
+
+**Current Implementation:**
+
+**Employer Onboarding:**
+- ✅ Fully implemented
+- Tasks: Add billing information, Add work location
+- Protection: Cannot post shifts until onboarding complete
+- Backend: `GET /api/v1/employers/me/onboarding_status`
+- Frontend: `OnboardingCard` component in employer dashboard
+- Models: `Company#onboarding_complete?` auto-updates `is_active` field
+
+**Worker Onboarding:**
+- 📋 Planned (not yet implemented)
+- Documentation: See `backend/docs/WORKER_ONBOARDING.md` for complete implementation guide
+- Tasks: Complete profile, Accept agreements, Add payment method
+- Protection: Cannot accept shifts until onboarding complete
+- Backend: Will use same pattern as employer onboarding
+- Frontend: `WorkerOnboardingCard` component (to be created)
+
+**Technical Implementation:**
+
+Backend pattern:
+```ruby
+# Model methods
+def onboarding_complete?
+  task_1_complete? && task_2_complete? && task_3_complete?
+end
+
+def onboarding_status
+  {
+    task_1_complete: task_1_complete?,
+    task_2_complete: task_2_complete?,
+    is_complete: onboarding_complete?
+  }
+end
+
+# Callbacks to auto-update onboarding_completed field
+after_save :update_onboarding_completed_status
+```
+
+Frontend pattern:
+```typescript
+// Context provides global state
+const { onboardingStatus, refreshOnboardingStatus } = useOnboarding();
+
+// Components call refresh after completing tasks
+await saveData();
+await refreshOnboardingStatus(); // Card updates automatically
+```
+
+**Key Files:**
+- Context: `frontend/contexts/onboarding-context.tsx`
+- Employer Card: `frontend/components/employer-dashboard/onboarding-card.tsx`
+- Worker Guide: `backend/docs/WORKER_ONBOARDING.md`
+- Company Model: `backend/app/models/company.rb`
+- EmployerProfile Model: `backend/app/models/employer_profile.rb`
+
 ## Domain Model
 
 ### Core Entities

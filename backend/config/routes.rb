@@ -30,6 +30,7 @@ Rails.application.routes.draw do
         collection do
           get 'me', to: 'employer_profiles#show'
           patch 'me', to: 'employer_profiles#update'
+          get 'me/onboarding_status', to: 'employer_profiles#onboarding_status'
         end
       end
 

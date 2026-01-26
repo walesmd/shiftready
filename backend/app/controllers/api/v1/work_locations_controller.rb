@@ -66,6 +66,8 @@ module Api
       def destroy
         if @work_location.shifts.exists?
           render_error('Cannot delete location with existing shifts', :unprocessable_entity)
+        elsif @work_location.company.work_locations.count <= 1
+          render_error('Cannot delete the last work location. Companies must have at least one location.', :unprocessable_entity)
         else
           @work_location.destroy
           head :no_content

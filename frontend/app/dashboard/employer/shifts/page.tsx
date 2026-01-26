@@ -29,6 +29,7 @@ import {
   Building2,
 } from "lucide-react";
 import { apiClient, type WorkLocation } from "@/lib/api/client";
+import { toast } from "sonner";
 
 const JOB_TYPES = [
   { value: "warehouse", label: "Warehouse" },
@@ -92,21 +93,35 @@ export default function CreateShiftPage() {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
 
-    async function fetchWorkLocations() {
+    async function checkOnboardingAndFetchData() {
       try {
+        // Check onboarding status first
+        const onboardingResponse = await apiClient.getEmployerOnboardingStatus();
+
+        if (onboardingResponse.data && !onboardingResponse.data.all_tasks_complete) {
+          // Onboarding not complete - redirect with warning
+          toast.error("Complete onboarding first", {
+            description: "You must complete all onboarding steps before you can post shifts. Please add billing information and at least one work location.",
+            duration: 6000,
+          });
+          router.push("/dashboard/employer");
+          return;
+        }
+
+        // Onboarding complete - fetch work locations
         const response = await apiClient.getWorkLocations();
         if (response.data) {
           setWorkLocations(response.data.work_locations);
         }
       } catch (err) {
-        console.error("Failed to fetch work locations:", err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchWorkLocations();
-  }, []);
+    checkOnboardingAndFetchData();
+  }, [router]);
 
   const updateFormData = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

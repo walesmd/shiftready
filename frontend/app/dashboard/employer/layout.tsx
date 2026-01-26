@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
+import { OnboardingProvider } from "@/contexts/onboarding-context";
+import { OnboardingCard } from "@/components/employer-dashboard/onboarding-card";
 import {
   Calendar,
   LayoutDashboard,
@@ -53,6 +55,7 @@ export default function EmployerDashboardLayout({
 
   return (
     <ProtectedRoute allowedRoles={["employer"]}>
+      <OnboardingProvider userRole="employer">
       <div className="min-h-screen bg-background">
       {/* Top Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -199,9 +202,15 @@ export default function EmployerDashboardLayout({
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-h-[calc(100vh-4rem)]">{children}</main>
+        <main className="flex-1 min-h-[calc(100vh-4rem)]">
+          <div className="px-4 lg:px-8 pt-6">
+            <OnboardingCard />
+          </div>
+          {children}
+        </main>
       </div>
     </div>
+      </OnboardingProvider>
     </ProtectedRoute>
   );
 }

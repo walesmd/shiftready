@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import { MapPin, Plus, Pencil, Trash2, Power } from "lucide-react"
 import { apiClient, type WorkLocation } from "@/lib/api/client"
+import { useOnboarding } from "@/contexts/onboarding-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,7 @@ import {
 import { WorkLocationForm, type WorkLocationFormData } from "./work-location-form"
 
 export function WorkLocationsSection() {
+  const { refreshOnboardingStatus } = useOnboarding()
   const [locations, setLocations] = useState<WorkLocation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -65,6 +67,8 @@ export function WorkLocationsSection() {
         toast.success("Work location added successfully")
         setShowAddForm(false)
         await loadLocations()
+        // Refresh onboarding status to update the onboarding card
+        await refreshOnboardingStatus()
       }
     } catch (error) {
       console.error("Failed to add location:", error)
@@ -118,6 +122,8 @@ export function WorkLocationsSection() {
       } else {
         toast.success("Work location deleted successfully")
         await loadLocations()
+        // Refresh onboarding status in case this was the last location
+        await refreshOnboardingStatus()
       }
     } catch (error) {
       console.error("Failed to delete location:", error)
@@ -221,7 +227,16 @@ export function WorkLocationsSection() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <>
+              {locations.length === 1 && (
+                <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    <span className="font-medium">Note:</span> This is your only location. Companies
+                    must have at least one location, so you cannot delete it until you add another.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-4">
               {locations.map((location) => (
                 <div key={location.id}>
                   {editingLocation?.id === location.id ? (
@@ -293,22 +308,25 @@ export function WorkLocationsSection() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          onClick={() => setDeleteConfirmLocation(location)}
-                          title="Delete location"
-                          disabled={isSubmitting}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {locations.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeleteConfirmLocation(location)}
+                            title="Delete location"
+                            disabled={isSubmitting}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
               ))}
             </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -322,18 +340,30 @@ export function WorkLocationsSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Work Location</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteConfirmLocation?.name}&quot;? This
-              action cannot be undone.
+              {locations.length <= 1 ? (
+                <>
+                  You cannot delete your last work location. Companies must have at least one
+                  location. Add another location first if you want to delete &quot;
+                  {deleteConfirmLocation?.name}&quot;.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete &quot;{deleteConfirmLocation?.name}&quot;? This
+                  action cannot be undone.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteLocation}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {isSubmitting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
+            {locations.length > 1 && (
+              <AlertDialogAction
+                onClick={handleDeleteLocation}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                {isSubmitting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
