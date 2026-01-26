@@ -115,8 +115,6 @@ namespace :phone do
     puts "\nInvalid Message phones: #{invalid_messages.count}"
     invalid_messages.first(10).each { |m| puts "  Message #{m.id}: from=#{m.from_phone}, to=#{m.to_phone}" }
     puts "  ... and #{invalid_messages.count - 10} more" if invalid_messages.count > 10
-    puts "\nInvalid Message phones: #{invalid_messages.count}"
-    invalid_messages.each { |m| puts "  Message #{m.id}: from=#{m.from_phone}, to=#{m.to_phone}" }
 
     total_invalid = invalid_workers.count + invalid_employers.count + invalid_messages.count
     if total_invalid.zero?
