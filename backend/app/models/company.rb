@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class Company < ApplicationRecord
+  include Geocodable
+
+  # Configure geocoding for billing address fields
+  geocodable prefix: 'billing_'
+
   # Associations
   belongs_to :owner_employer_profile, class_name: 'EmployerProfile', optional: true, inverse_of: :owned_company
   has_many :employer_profiles, dependent: :restrict_with_error

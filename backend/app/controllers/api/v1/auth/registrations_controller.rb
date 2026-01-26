@@ -56,6 +56,8 @@ module Api
             :billing_city,
             :billing_state,
             :billing_zip_code,
+            :billing_latitude,
+            :billing_longitude,
             :workers_needed_per_week,
             :typical_roles
           )
