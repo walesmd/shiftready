@@ -2,6 +2,7 @@
 
 require 'net/http'
 require 'json'
+require 'digest'
 
 # Service for geocoding addresses using the Geocodio API
 # Handles API requests, response parsing, and error handling
@@ -24,10 +25,11 @@ class GeocodingService
   end
 
   def geocode(address)
+    hash_address = Digest::SHA256.hexdigest(address)[0, 12]
     response = make_request(address)
     parse_response(response)
   rescue StandardError => e
-    Rails.logger.error("Geocoding failed for address '#{address}': #{e.message}")
+    Rails.logger.error("Geocoding failed for address hash '#{hash_address}': #{e.message}")
     nil
   end
 
@@ -43,6 +45,7 @@ class GeocodingService
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
+    http.open_timeout = 5
     http.read_timeout = 5
 
     # In development, be more lenient with SSL verification

@@ -56,7 +56,7 @@ module Geocodable
   end
 
   def required_address_present?
-    required_fields = %i[address_line_1 city state zip_code]
+    required_fields = geocodable_address_fields || %i[address_line_1 city state zip_code]
     required_fields.all? { |field| send(field_with_prefix(field)).present? }
   end
 

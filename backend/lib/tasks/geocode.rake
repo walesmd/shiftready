@@ -13,16 +13,20 @@ namespace :geocode do
 
     worker_profiles.find_each do |profile|
       print "  Geocoding worker profile #{profile.id}... "
-      result = GeocodingService.geocode(profile.full_address)
+      begin
+        result = GeocodingService.geocode(profile.full_address)
 
-      if result
-        profile.update_columns(
-          latitude: result[:latitude],
-          longitude: result[:longitude]
-        )
-        puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
-      else
-        puts "✗ Failed"
+        if result
+          profile.update_columns(
+            latitude: result[:latitude],
+            longitude: result[:longitude]
+          )
+          puts "✓ (#{result[:latitude]}, #{result[:longitude]})"
+        else
+          puts "✗ Failed"
+        end
+      rescue StandardError => e
+        puts "✗ Error: #{e.message}"
       end
 
       sleep 0.1 # Rate limiting
