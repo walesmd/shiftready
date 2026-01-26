@@ -105,16 +105,18 @@ export function CompanyBillingSection() {
     setIsSubmitting(true)
     try {
       // Normalize phone number before sending
-      const normalizedPhone = data.billing_phone ? normalizePhoneNumber(data.billing_phone) : ""
+      const normalizedPhone = data.billing_phone
+        ? normalizePhoneNumber(data.billing_phone) ?? ""
+        : ""
 
       const response = await apiClient.updateCompany(company.id, {
-        billing_email: data.billing_email || undefined,
-        billing_phone: normalizedPhone || undefined,
-        billing_address_line_1: data.billing_address_line_1 || undefined,
-        billing_address_line_2: data.billing_address_line_2 || undefined,
-        billing_city: data.billing_city || undefined,
-        billing_state: data.billing_state ? data.billing_state.toUpperCase() : undefined,
-        billing_zip_code: data.billing_zip_code || undefined,
+        billing_email: data.billing_email,
+        billing_phone: normalizedPhone,
+        billing_address_line_1: data.billing_address_line_1,
+        billing_address_line_2: data.billing_address_line_2,
+        billing_city: data.billing_city,
+        billing_state: data.billing_state ? data.billing_state.toUpperCase() : "",
+        billing_zip_code: data.billing_zip_code,
       })
 
       if (response.error) {
