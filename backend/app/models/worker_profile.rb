@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class WorkerProfile < ApplicationRecord
+  include WorkerProfileAlgorithmScopes
+
   # Associations
   belongs_to :user
   has_many :worker_availabilities, dependent: :destroy
@@ -9,6 +11,7 @@ class WorkerProfile < ApplicationRecord
   has_many :shifts, through: :shift_assignments
   has_many :messages, as: :messageable
   has_many :payments, through: :shift_assignments
+  has_many :recruiting_activity_logs, dependent: :nullify
 
   # Enums
   enum :preferred_payment_method, { direct_deposit: 0, check: 1 }

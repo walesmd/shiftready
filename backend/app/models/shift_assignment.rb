@@ -6,6 +6,7 @@ class ShiftAssignment < ApplicationRecord
   belongs_to :worker_profile
   has_one :payment, dependent: :destroy
   belongs_to :timesheet_approved_by_employer, class_name: 'EmployerProfile', optional: true
+  has_many :recruiting_activity_logs, dependent: :nullify
 
   # Enums
   enum :assigned_by, { algorithm: 0, manual_admin: 1, worker_self_select: 2 }
@@ -44,6 +45,7 @@ class ShiftAssignment < ApplicationRecord
   # Callbacks
   before_validation :set_assigned_at_default
   after_update :update_worker_stats, if: :saved_change_to_status?
+  after_commit :trigger_resume_recruiting, if: :just_cancelled_and_can_resume_recruiting?, on: :update
 
   # Instance methods - Status transitions
   def accept!(method: :sms)
@@ -237,5 +239,20 @@ class ShiftAssignment < ApplicationRecord
       # Already handled in mark_no_show!
       worker_profile.update_reliability_score!
     end
+  end
+
+  def just_cancelled?
+    saved_change_to_status? && cancelled?
+  end
+
+  def just_cancelled_and_can_resume_recruiting?
+    return false unless just_cancelled?
+
+    shift.reload
+    shift.can_resume_recruiting?
+  end
+
+  def trigger_resume_recruiting
+    ResumeRecruitingJob.perform_later(shift.id)
   end
 end
