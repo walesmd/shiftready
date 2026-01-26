@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_24_154203) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_25_152722) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -132,6 +132,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_154203) do
     t.index ["tax_year"], name: "index_payments_on_tax_year"
     t.index ["worker_profile_id", "tax_year"], name: "index_payments_on_worker_and_tax_year"
     t.index ["worker_profile_id"], name: "index_payments_on_worker_profile_id"
+  end
+
+  create_table "recruiting_activity_logs", force: :cascade do |t|
+    t.string "action", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "details", default: {}
+    t.bigint "shift_assignment_id"
+    t.bigint "shift_id", null: false
+    t.string "source", default: "algorithm", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "worker_profile_id"
+    t.index ["details"], name: "index_recruiting_activity_logs_on_details", using: :gin
+    t.index ["shift_assignment_id"], name: "index_recruiting_activity_logs_on_shift_assignment_id"
+    t.index ["shift_id", "action"], name: "index_recruiting_activity_logs_on_shift_id_and_action"
+    t.index ["shift_id", "created_at"], name: "index_recruiting_activity_logs_on_shift_id_and_created_at"
+    t.index ["shift_id"], name: "index_recruiting_activity_logs_on_shift_id"
+    t.index ["worker_profile_id"], name: "index_recruiting_activity_logs_on_worker_profile_id"
   end
 
   create_table "shift_assignments", force: :cascade do |t|
@@ -313,6 +330,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_154203) do
   add_foreign_key "payments", "companies"
   add_foreign_key "payments", "shift_assignments"
   add_foreign_key "payments", "worker_profiles"
+  add_foreign_key "recruiting_activity_logs", "shift_assignments"
+  add_foreign_key "recruiting_activity_logs", "shifts"
+  add_foreign_key "recruiting_activity_logs", "worker_profiles"
   add_foreign_key "shift_assignments", "employer_profiles", column: "timesheet_approved_by_employer_id"
   add_foreign_key "shift_assignments", "shifts"
   add_foreign_key "shift_assignments", "worker_profiles"

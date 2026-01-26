@@ -48,6 +48,7 @@ Rails.application.routes.draw do
           post :start_recruiting
           post :cancel
         end
+        resources :recruiting_activity_logs, only: [:index]
       end
 
       # Shift assignments

@@ -71,6 +71,8 @@ module Api
 
         shift = employer_profile.shifts.build(shift_params)
         shift.company_id = employer_profile.company_id
+        shift.status = :posted
+        shift.posted_at = Time.current
 
         if shift.save
           render json: shift_response(shift), status: :created

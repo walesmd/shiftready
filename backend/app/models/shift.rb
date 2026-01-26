@@ -7,6 +7,7 @@ class Shift < ApplicationRecord
   belongs_to :created_by_employer, class_name: 'EmployerProfile', foreign_key: :created_by_employer_id
   has_many :shift_assignments, dependent: :destroy
   has_many :workers, through: :shift_assignments, source: :worker_profile
+  has_many :recruiting_activity_logs, dependent: :destroy
 
   # Enums
   enum :status, {
@@ -150,6 +151,10 @@ class Shift < ApplicationRecord
   def can_be_deleted?
     # Can only delete draft shifts or shifts with no accepted assignments
     draft? || shift_assignments.accepted_assignments.empty?
+  end
+
+  def can_resume_recruiting?
+    (filled? || recruiting?) && !fully_filled? && start_datetime > 24.hours.from_now
   end
 
   private
