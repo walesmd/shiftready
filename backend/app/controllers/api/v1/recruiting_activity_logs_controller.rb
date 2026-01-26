@@ -46,6 +46,7 @@ module Api
         @shift = Shift.find(params[:shift_id])
       rescue ActiveRecord::RecordNotFound
         render_error('Shift not found', :not_found)
+        return
       end
 
       def authorize_access
@@ -53,9 +54,11 @@ module Api
         if current_user.employer?
           unless current_user.employer_profile&.company_id == @shift.company_id
             render_error('You do not have permission to view this data', :forbidden)
+            return
           end
         elsif !current_user.admin?
           render_error('You do not have permission to view this data', :forbidden)
+          return
         end
       end
 

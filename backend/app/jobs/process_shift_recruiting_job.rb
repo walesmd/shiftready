@@ -29,29 +29,31 @@ class ProcessShiftRecruitingJob < ApplicationJob
       return
     end
 
-    # Check if there's already a pending offer
-    pending_offer = shift.shift_assignments.pending_response.first
-    if pending_offer
-      Rails.logger.info "[ProcessRecruiting] Shift #{shift.id} has pending offer (assignment #{pending_offer.id}), waiting"
-      return
-    end
+    shift.with_lock do
+      # Check if there's already a pending offer (re-queried inside lock)
+      pending_offer = shift.shift_assignments.pending_response.first
+      if pending_offer
+        Rails.logger.info "[ProcessRecruiting] Shift #{shift.id} has pending offer (assignment #{pending_offer.id}), waiting"
+        return
+      end
 
-    # Create next offer
-    offer_service = ShiftOfferService.new(shift)
-    result = offer_service.create_next_offer
+      # Create next offer
+      offer_service = ShiftOfferService.new(shift)
+      result = offer_service.create_next_offer
 
-    if result.nil?
-      # No eligible workers remaining
-      Rails.logger.info "[ProcessRecruiting] No eligible workers remaining for shift #{shift.id}"
-      RecruitingActivityLog.log_recruiting_paused(
-        shift,
-        reason: 'no_eligible_workers',
-        details: { checked_at: Time.current.iso8601 }
-      )
-    elsif result.is_a?(Hash) && result[:status] == :pending_offer_exists
-      Rails.logger.info "[ProcessRecruiting] Pending offer already exists for shift #{shift.id}"
-    else
-      Rails.logger.info "[ProcessRecruiting] Created offer (assignment #{result.id}) for shift #{shift.id}"
+      if result.nil?
+        # No eligible workers remaining
+        Rails.logger.info "[ProcessRecruiting] No eligible workers remaining for shift #{shift.id}"
+        RecruitingActivityLog.log_recruiting_paused(
+          shift,
+          reason: 'no_eligible_workers',
+          details: { checked_at: Time.current.iso8601 }
+        )
+      elsif result.is_a?(Hash) && result[:status] == :pending_offer_exists
+        Rails.logger.info "[ProcessRecruiting] Pending offer already exists for shift #{shift.id}"
+      else
+        Rails.logger.info "[ProcessRecruiting] Created offer (assignment #{result.id}) for shift #{shift.id}"
+      end
     end
   end
 end

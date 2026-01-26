@@ -91,6 +91,7 @@ class RecruitingAlgorithmService
 
   def calculate_distance(worker)
     return Float::INFINITY unless worker.latitude && worker.longitude
+    return Float::INFINITY unless shift.work_location
     return Float::INFINITY unless shift.work_location.latitude && shift.work_location.longitude
 
     haversine_distance(
@@ -178,7 +179,8 @@ class RecruitingAlgorithmService
 
   # Experience scoring: 0.5 points per completed shift, capped at 10
   def score_experience(worker)
-    [worker.total_shifts_completed * 0.5, EXPERIENCE_MAX_POINTS].min.round(2)
+    completed_shifts = worker.total_shifts_completed || 0
+    [completed_shifts * 0.5, EXPERIENCE_MAX_POINTS].min.round(2)
   end
 end
 

@@ -45,7 +45,7 @@ class ShiftAssignment < ApplicationRecord
   # Callbacks
   before_validation :set_assigned_at_default
   after_update :update_worker_stats, if: :saved_change_to_status?
-  after_commit :trigger_resume_recruiting, if: :just_cancelled?, on: :update
+  after_commit :trigger_resume_recruiting, if: :just_cancelled_and_can_resume_recruiting?, on: :update
 
   # Instance methods - Status transitions
   def accept!(method: :sms)
@@ -245,11 +245,14 @@ class ShiftAssignment < ApplicationRecord
     saved_change_to_status? && cancelled?
   end
 
-  def trigger_resume_recruiting
-    shift.reload
-    return unless shift.start_datetime > 24.hours.from_now
-    return if shift.fully_filled?
+  def just_cancelled_and_can_resume_recruiting?
+    return false unless just_cancelled?
 
+    shift.reload
+    shift.can_resume_recruiting?
+  end
+
+  def trigger_resume_recruiting
     ResumeRecruitingJob.perform_later(shift.id)
   end
 end

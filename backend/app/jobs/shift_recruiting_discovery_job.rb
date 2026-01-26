@@ -12,8 +12,7 @@ class ShiftRecruitingDiscoveryJob < ApplicationJob
 
     shifts_ready_for_recruiting.find_each do |shift|
       begin
-        start_recruiting_for_shift(shift)
-        discovered_count += 1
+        discovered_count += 1 if start_recruiting_for_shift(shift)
       rescue StandardError => e
         Rails.logger.error "[RecruitingDiscovery] Error starting recruiting for shift #{shift.id}: #{e.message}"
         # Continue to next shift
@@ -41,7 +40,7 @@ class ShiftRecruitingDiscoveryJob < ApplicationJob
     Rails.logger.info "[RecruitingDiscovery] Starting recruiting for shift #{shift.id} (#{shift.tracking_code})"
 
     # Transition shift to recruiting status
-    shift.start_recruiting!
+    return false unless shift.start_recruiting!
 
     # Log recruiting started
     RecruitingActivityLog.log_recruiting_started(
@@ -54,5 +53,7 @@ class ShiftRecruitingDiscoveryJob < ApplicationJob
 
     # Enqueue the processing job
     ProcessShiftRecruitingJob.perform_later(shift.id)
+
+    true
   end
 end
