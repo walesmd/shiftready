@@ -92,8 +92,23 @@ class CompanyTest < ActiveSupport::TestCase
 
   # Scopes
   test "active scope returns only active companies" do
-    active = create(:company, is_active: true)
-    inactive = create(:company, is_active: false)
+    active = create(:company,
+                    billing_address_line_1: "123 Main St",
+                    billing_city: "San Antonio",
+                    billing_state: "TX",
+                    billing_zip_code: "78201",
+                    billing_email: "billing@example.com",
+                    billing_phone: "2105551234")
+    create(:work_location, company: active)
+    active.refresh_onboarding_status!
+
+    inactive = create(:company,
+                      billing_address_line_1: "456 Oak Ave",
+                      billing_city: "San Antonio",
+                      billing_state: "TX",
+                      billing_zip_code: "78201",
+                      billing_email: "inactive@example.com",
+                      billing_phone: "2105555678")
 
     assert_includes Company.active, active
     assert_not_includes Company.active, inactive

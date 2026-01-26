@@ -359,6 +359,10 @@ class ApiClient {
     });
   }
 
+  async getEmployerOnboardingStatus() {
+    return this.request<OnboardingStatus>("/api/v1/employers/me/onboarding_status");
+  }
+
   // Company endpoints
   async getCompanies(params?: { page?: number; per_page?: number }) {
     const queryString = params
@@ -653,6 +657,16 @@ export interface EmployerProfile {
   };
   created_at: string;
   updated_at: string;
+}
+
+export interface OnboardingStatus {
+  onboarding_completed: boolean;
+  company_is_active: boolean;
+  tasks: {
+    billing_info_complete: boolean;
+    work_locations_added: boolean;
+  };
+  all_tasks_complete: boolean;
 }
 
 export interface Company {

@@ -7,6 +7,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { Receipt } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { useOnboarding } from "@/contexts/onboarding-context"
 import { apiClient, type Company } from "@/lib/api/client"
 import { normalizePhoneNumber, isValidPhoneNumber } from "@/lib/phone"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ type BillingFormData = z.infer<typeof billingSchema>
 
 export function CompanyBillingSection() {
   const { user } = useAuth()
+  const { refreshOnboardingStatus } = useOnboarding()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [company, setCompany] = useState<Company | null>(null)
@@ -128,6 +130,8 @@ export function CompanyBillingSection() {
         if (updatedCompany.data) {
           setCompany(updatedCompany.data)
         }
+        // Refresh onboarding status to update the onboarding card
+        await refreshOnboardingStatus()
       }
     } catch (error) {
       toast.error("Failed to update billing information")

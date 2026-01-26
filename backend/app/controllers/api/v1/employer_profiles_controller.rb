@@ -3,8 +3,8 @@
 module Api
   module V1
     class EmployerProfilesController < BaseController
-      before_action :ensure_employer_role, only: [:create, :update]
-      before_action :set_employer_profile, only: [:show, :update]
+      before_action :ensure_employer_role, only: [:create, :update, :onboarding_status]
+      before_action :set_employer_profile, only: [:show, :update, :onboarding_status]
 
       # POST /api/v1/employers
       def create
@@ -41,6 +41,28 @@ module Api
         else
           render_errors(@employer_profile.errors.full_messages)
         end
+      end
+
+      # GET /api/v1/employers/me/onboarding_status
+      def onboarding_status
+        unless @employer_profile
+          return render_error('Employer profile not found', :not_found)
+        end
+
+        company = @employer_profile.company
+        unless company
+          return render_error('Company not found', :not_found)
+        end
+
+        render json: {
+          onboarding_completed: @employer_profile.onboarding_completed,
+          company_is_active: company.is_active,
+          tasks: {
+            billing_info_complete: company.billing_info_complete?,
+            work_locations_added: company.has_work_locations?
+          },
+          all_tasks_complete: company.onboarding_complete?
+        }
       end
 
       private

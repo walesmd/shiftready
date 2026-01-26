@@ -3,6 +3,9 @@
 class WorkLocation < ApplicationRecord
   include Geocodable
 
+  # Callbacks
+  after_commit :update_company_onboarding_status, on: %i[create update destroy]
+
   # Associations
   belongs_to :company
   has_many :shifts, dependent: :restrict_with_error
@@ -22,5 +25,13 @@ class WorkLocation < ApplicationRecord
 
   def display_name
     "#{name} - #{city}, #{state}"
+  end
+
+  private
+
+  def update_company_onboarding_status
+    return if company.nil? || company.destroyed?
+
+    company.refresh_onboarding_status!
   end
 end
