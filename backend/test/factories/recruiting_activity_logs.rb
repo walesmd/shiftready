@@ -13,7 +13,10 @@ FactoryBot.define do
 
     trait :with_assignment do
       association :worker_profile, :onboarded
-      association :shift_assignment
+
+      after(:build) do |log|
+        log.shift_assignment ||= build(:shift_assignment, shift: log.shift, worker_profile: log.worker_profile)
+      end
     end
 
     trait :recruiting_started do

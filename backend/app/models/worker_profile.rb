@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class WorkerProfile < ApplicationRecord
+  include WorkerProfileAlgorithmScopes
+
   # Associations
   belongs_to :user
   has_many :worker_availabilities, dependent: :destroy

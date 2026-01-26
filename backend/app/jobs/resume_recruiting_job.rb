@@ -14,6 +14,7 @@ class ResumeRecruitingJob < ApplicationJob
     end
 
     Rails.logger.info "[ResumeRecruiting] Checking if recruiting can resume for shift #{shift.id} (#{shift.tracking_code})"
+    previous_status = shift.status
 
     # Validate conditions for resuming
     unless can_resume?(shift)
@@ -32,7 +33,7 @@ class ResumeRecruitingJob < ApplicationJob
       shift,
       details: {
         resumed_at: Time.current.iso8601,
-        previous_status: shift.status_before_last_save,
+        previous_status: previous_status,
         hours_until_start: ((shift.start_datetime - Time.current) / 1.hour).round(1)
       }
     )

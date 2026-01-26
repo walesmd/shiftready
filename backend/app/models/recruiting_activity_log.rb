@@ -28,6 +28,9 @@ class RecruitingActivityLog < ApplicationRecord
   validates :action, presence: true, inclusion: { in: ACTIONS }
   validates :source, presence: true, inclusion: { in: SOURCES }
 
+  # Callbacks
+  before_validation :set_default_source
+
   # Scopes
   scope :for_shift, ->(shift_id) { where(shift_id: shift_id) }
   scope :for_worker, ->(worker_id) { where(worker_profile_id: worker_id) }
@@ -166,5 +169,11 @@ class RecruitingActivityLog < ApplicationRecord
         )
       )
     end
+  end
+
+  private
+
+  def set_default_source
+    self.source ||= 'algorithm'
   end
 end

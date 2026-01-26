@@ -72,7 +72,10 @@ class RecruitingAlgorithmService
   private
 
   def base_query
-    WorkerProfile.active.onboarded.available_at(shift.start_datetime)
+    WorkerProfile.active
+                 .onboarded
+                 .available_at(shift.start_datetime)
+                 .includes(:worker_preferred_job_types, shift_assignments: :shift)
   end
 
   def calculate_score_breakdown(worker, distance)
@@ -137,12 +140,10 @@ class RecruitingAlgorithmService
 
   # Job type scoring: exact match = 20, completed similar = 10, no history = 5
   def score_job_type(worker)
-    has_preference = worker.worker_preferred_job_types.exists?(job_type: shift.job_type)
-    completed_this_type = worker.shift_assignments
-                                .completed_shifts
-                                .joins(:shift)
-                                .where(shifts: { job_type: shift.job_type })
-                                .exists?
+    has_preference = worker.worker_preferred_job_types.any? { |preference| preference.job_type == shift.job_type }
+    completed_this_type = worker.shift_assignments.any? do |assignment|
+      assignment.completed? && assignment.shift&.job_type == shift.job_type
+    end
 
     if has_preference && completed_this_type
       JOB_TYPE_MAX_POINTS
@@ -181,31 +182,3 @@ class RecruitingAlgorithmService
   end
 end
 
-# Add scopes to WorkerProfile for algorithm queries
-module WorkerProfileAlgorithmScopes
-  extend ActiveSupport::Concern
-
-  included do
-    scope :with_job_type_preference, ->(job_type) {
-      joins(:worker_preferred_job_types)
-        .where(worker_preferred_job_types: { job_type: job_type })
-        .distinct
-    }
-
-    scope :with_coordinates, -> {
-      where.not(latitude: nil, longitude: nil)
-    }
-
-    scope :not_blocked_by_company, ->(company) {
-      where.not(id: BlockList.where(blocker: company, blocked_type: 'WorkerProfile').select(:blocked_id))
-           .where.not(id: BlockList.where(blocked: company, blocker_type: 'WorkerProfile').select(:blocker_id))
-    }
-
-    scope :not_already_offered, ->(shift) {
-      where.not(id: shift.shift_assignments.select(:worker_profile_id))
-    }
-  end
-end
-
-# Include scopes in WorkerProfile
-WorkerProfile.include(WorkerProfileAlgorithmScopes)

@@ -107,18 +107,16 @@ class ShiftOfferServiceTest < ActiveSupport::TestCase
     assert_nil result
   end
 
-  test "create_next_offer returns hash when pending offer exists" do
+  test "create_next_offer returns nil when pending offer exists" do
     worker = create_eligible_worker
-    existing = create(:shift_assignment, :offered, shift: @shift, worker_profile: worker)
+    create(:shift_assignment, :offered, shift: @shift, worker_profile: worker)
 
     create_eligible_worker # Another eligible worker
 
     service = ShiftOfferService.new(@shift)
     result = service.create_next_offer
 
-    assert result.is_a?(Hash)
-    assert_equal :pending_offer_exists, result[:status]
-    assert_equal existing, result[:assignment]
+    assert_nil result
   end
 
   test "create_next_offer returns nil when no eligible workers" do

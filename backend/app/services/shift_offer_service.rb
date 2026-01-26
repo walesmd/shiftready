@@ -16,8 +16,8 @@ class ShiftOfferService
     return nil unless shift.recruiting?
 
     # Check for existing pending offers
-    pending_offer = shift.shift_assignments.pending_response.first
-    return { status: :pending_offer_exists, assignment: pending_offer } if pending_offer
+    pending_offer = pending_offer_for_shift
+    return nil if pending_offer
 
     algorithm = RecruitingAlgorithmService.new(shift)
     next_worker_result = algorithm.next_best_worker
@@ -40,6 +40,10 @@ class ShiftOfferService
     )
 
     # Create the assignment
+    # TODO: Fix sms_sent_at timing. We currently set it immediately, but it should
+    # only be set after the SMS provider confirms delivery. Consider introducing
+    # an offered_at timestamp for timeout calculations, and set sms_sent_at from
+    # the SMS delivery callback when successful.
     assignment = ShiftAssignment.create!(
       shift: shift,
       worker_profile: worker,
@@ -128,6 +132,16 @@ class ShiftOfferService
   def eligible_workers_remaining?
     algorithm = RecruitingAlgorithmService.new(shift)
     algorithm.next_best_worker.present?
+  end
+
+  # Check if the shift already has a pending offer
+  def shift_has_pending_offer?
+    pending_offer_for_shift.present?
+  end
+
+  # Expose the pending offer for explicit caller checks
+  def pending_offer_for_shift
+    shift.shift_assignments.pending_response.first
   end
 
   # Get scored workers for debugging/observability

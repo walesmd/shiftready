@@ -141,12 +141,16 @@ class ShiftRecruitingDiscoveryJobTest < ActiveSupport::TestCase
                     start_datetime: 4.days.from_now,
                     end_datetime: 4.days.from_now + 8.hours)
 
-    # Make shift1 fail by invalidating it mid-process
-    Shift.where(id: shift1.id).update_all(status: :draft)
+    # Simulate an error by making shift1 transition fail
+    # We'll manually set it to a different status that can't transition
+    shift1.update_columns(status: Shift.statuses[:cancelled])
 
+    # Run the job - it should handle the error and continue
     ShiftRecruitingDiscoveryJob.perform_now
 
-    # shift2 should still be processed
-    assert shift2.reload.recruiting?
+    # shift1 should remain cancelled (start_recruiting! will fail)
+    assert shift1.reload.cancelled?, "shift1 should still be cancelled"
+    # shift2 should have been processed successfully
+    assert shift2.reload.recruiting?, "shift2 should have been processed despite shift1 failing"
   end
 end

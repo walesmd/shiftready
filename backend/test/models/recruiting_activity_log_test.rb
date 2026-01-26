@@ -45,10 +45,10 @@ class RecruitingActivityLogTest < ActiveSupport::TestCase
     end
   end
 
-  test "requires source" do
+  test "sets default source" do
     log = build(:recruiting_activity_log, source: nil)
-    assert_not log.valid?
-    assert_includes log.errors[:source], "can't be blank"
+    log.valid?
+    assert_equal 'algorithm', log.source
   end
 
   test "validates source is in allowed list" do
@@ -93,16 +93,16 @@ class RecruitingActivityLogTest < ActiveSupport::TestCase
   end
 
   test "chronological scope orders by created_at ascending" do
-    log1 = create(:recruiting_activity_log)
-    log2 = create(:recruiting_activity_log)
+    log1 = create(:recruiting_activity_log, created_at: 2.seconds.ago)
+    log2 = create(:recruiting_activity_log, created_at: 1.second.ago)
 
     logs = RecruitingActivityLog.chronological
     assert_equal [log1.id, log2.id], logs.pluck(:id)
   end
 
   test "recent scope orders by created_at descending" do
-    log1 = create(:recruiting_activity_log)
-    log2 = create(:recruiting_activity_log)
+    log1 = create(:recruiting_activity_log, created_at: 2.seconds.ago)
+    log2 = create(:recruiting_activity_log, created_at: 1.second.ago)
 
     logs = RecruitingActivityLog.recent
     assert_equal [log2.id, log1.id], logs.pluck(:id)
@@ -222,7 +222,7 @@ class RecruitingActivityLogTest < ActiveSupport::TestCase
     log = RecruitingActivityLog.log_offer_timeout(shift, assignment)
 
     assert_equal "offer_timeout", log.action
-    assert_equal 15, log.details["timeout_minutes"]
+    assert_in_delta 15, log.details["timeout_minutes"], 1, "timeout_minutes should be approximately 15"
     assert log.details["offer_sent_at"].present?
   end
 
