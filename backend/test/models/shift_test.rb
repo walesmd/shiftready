@@ -94,10 +94,31 @@ class ShiftTest < ActiveSupport::TestCase
     assert_includes shift.errors[:pay_rate_cents], "can't be blank"
   end
 
-  test "requires pay_rate_cents to be positive" do
-    shift = build(:shift, pay_rate_cents: 0)
+  test "requires pay_rate_cents to be at least federal minimum wage" do
+    shift = build(:shift, pay_rate_cents: 500) # $5.00 - below minimum
     assert_not shift.valid?
-    assert_includes shift.errors[:pay_rate_cents], "must be greater than 0"
+    assert_includes shift.errors[:pay_rate_cents], "must be greater than or equal to #{AppConstants::FEDERAL_MINIMUM_WAGE_CENTS}"
+  end
+
+  test "requires pay_rate_cents to be at most maximum wage" do
+    shift = build(:shift, pay_rate_cents: 15000) # $150.00 - above maximum
+    assert_not shift.valid?
+    assert_includes shift.errors[:pay_rate_cents], "must be less than or equal to #{AppConstants::MAXIMUM_HOURLY_WAGE_CENTS}"
+  end
+
+  test "accepts valid pay_rate_cents within range" do
+    shift = build(:shift, pay_rate_cents: 1500) # $15.00 - valid
+    assert shift.valid?
+  end
+
+  test "accepts pay_rate_cents at minimum wage" do
+    shift = build(:shift, pay_rate_cents: AppConstants::FEDERAL_MINIMUM_WAGE_CENTS)
+    assert shift.valid?
+  end
+
+  test "accepts pay_rate_cents at maximum wage" do
+    shift = build(:shift, pay_rate_cents: AppConstants::MAXIMUM_HOURLY_WAGE_CENTS)
+    assert shift.valid?
   end
 
   test "requires slots_total to be non-negative" do

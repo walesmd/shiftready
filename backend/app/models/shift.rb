@@ -22,7 +22,11 @@ class Shift < ApplicationRecord
 
   # Validations
   validates :title, :description, :job_type, :start_datetime, :end_datetime, :pay_rate_cents, presence: true
-  validates :pay_rate_cents, numericality: { greater_than: 0 }
+  validates :pay_rate_cents, numericality: {
+    greater_than_or_equal_to: AppConstants::FEDERAL_MINIMUM_WAGE_CENTS,
+    less_than_or_equal_to: AppConstants::MAXIMUM_HOURLY_WAGE_CENTS,
+    only_integer: true
+  }
   validates :slots_total, :slots_filled, :min_workers_needed, numericality: { greater_than_or_equal_to: 0 }
   validates :job_type, inclusion: { in: WorkerPreferredJobType::AVAILABLE_JOB_TYPES }
   validates :tracking_code, presence: true, uniqueness: true
