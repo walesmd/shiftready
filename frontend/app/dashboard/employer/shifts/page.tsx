@@ -518,7 +518,7 @@ export default function CreateShiftPage() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      This is the rate workers will receive (${FEDERAL_MINIMUM_WAGE.toFixed(2)} - ${MAXIMUM_HOURLY_WAGE.toFixed(2)})
+                      This is the rate workers will receive (minimum: ${FEDERAL_MINIMUM_WAGE.toFixed(2)}/hr)
                     </p>
                   </div>
                   <div>
