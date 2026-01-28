@@ -101,7 +101,9 @@ function getOutcomeBadge(outcome: string) {
 }
 
 function formatDateTime(dateString: string): string {
+  if (!dateString) return "—";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "—";
   return date.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -113,7 +115,9 @@ function formatDateTime(dateString: string): string {
 }
 
 function formatTime(dateString: string): string {
+  if (!dateString) return "—";
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "—";
   return date.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",

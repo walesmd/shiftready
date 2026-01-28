@@ -65,6 +65,13 @@ function getRecruitingStatusBadge(status: string) {
           Filled
         </Badge>
       );
+    case "completed":
+      return (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+          <Check className="w-3 h-3 mr-1" />
+          Completed
+        </Badge>
+      );
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -248,11 +255,11 @@ export default function AdminRecruitingPage() {
             </div>
 
             <div className="flex-1">
-              <label className="text-sm font-medium text-foreground">
+              <label htmlFor="recruiting-status-select" className="text-sm font-medium text-foreground">
                 Recruiting Status
               </label>
               <Select value={selectedStatus} onValueChange={handleStatusChange}>
-                <SelectTrigger className="mt-2 bg-card">
+                <SelectTrigger id="recruiting-status-select" className="mt-2 bg-card">
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>

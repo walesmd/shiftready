@@ -10,7 +10,8 @@ module Api
         # GET /api/v1/admin/recruiting
         # Lists all shifts with recruiting activity, sorted by urgency (paused first)
         def index
-          shifts = Shift.includes(:company, :work_location, :created_by_employer)
+          shifts = Shift.includes(:company, :work_location, :created_by_employer,
+                                  :recruiting_activity_logs, :shift_assignments)
                         .joins(:recruiting_activity_logs)
                         .distinct
 
@@ -20,7 +21,6 @@ module Api
           shifts = shifts.where('start_datetime >= ?', params[:start_date]) if params[:start_date].present?
           shifts = shifts.where('start_datetime <= ?', params[:end_date]) if params[:end_date].present?
 
-          total_count = shifts.count
           page = [params[:page].to_i, 1].max
           per_page = [[params[:per_page].to_i, 1].max, 100].min
           per_page = 25 if per_page < 1
@@ -162,7 +162,7 @@ module Api
           last_pause = shift.recruiting_activity_logs.where(action: 'recruiting_paused').order(created_at: :desc).first
           return nil unless last_pause && shift_is_paused?(shift)
 
-          last_pause.details['reason']
+          last_pause.details&.dig('reason')
         end
 
         def shift_summary_response(shift)
