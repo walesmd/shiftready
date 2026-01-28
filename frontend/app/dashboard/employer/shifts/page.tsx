@@ -30,6 +30,12 @@ import {
 } from "lucide-react";
 import { apiClient, type WorkLocation } from "@/lib/api/client";
 import { toast } from "sonner";
+import {
+  FEDERAL_MINIMUM_WAGE,
+  MAXIMUM_HOURLY_WAGE,
+  PAY_RATE_STEP,
+  SERVICE_FEE_RATE,
+} from "@/lib/constants";
 
 const JOB_TYPES = [
   { value: "warehouse", label: "Warehouse" },
@@ -48,8 +54,6 @@ const JOB_TYPES = [
   { value: "cleaning", label: "Cleaning" },
   { value: "general_labor", label: "General Labor" },
 ];
-
-const SERVICE_FEE_RATE = 0.20; // 20% service fee
 
 interface FormData {
   title: string;
@@ -503,8 +507,9 @@ export default function CreateShiftPage() {
                       <Input
                         id="payRate"
                         type="number"
-                        step="0.50"
-                        min="7.25"
+                        step={PAY_RATE_STEP}
+                        min={FEDERAL_MINIMUM_WAGE}
+                        max={MAXIMUM_HOURLY_WAGE}
                         placeholder="15.00"
                         className="pl-9 bg-card"
                         value={formData.payRate}
@@ -513,7 +518,7 @@ export default function CreateShiftPage() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      This is the rate workers will receive
+                      This is the rate workers will receive (minimum: ${FEDERAL_MINIMUM_WAGE.toFixed(2)}/hr)
                     </p>
                   </div>
                   <div>
@@ -654,7 +659,7 @@ export default function CreateShiftPage() {
                     <span className="text-muted-foreground">
                       Service Fee
                       <span className="block text-xs">
-                        20% platform fee
+                        {(SERVICE_FEE_RATE * 100).toFixed(0)}% platform fee
                       </span>
                     </span>
                     <span className="font-medium text-foreground">
