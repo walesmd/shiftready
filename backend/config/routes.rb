@@ -66,6 +66,11 @@ Rails.application.routes.draw do
 
       # Activities (recent activity feed)
       resources :activities, only: [:index]
+
+      # Admin namespace
+      namespace :admin do
+        resources :recruiting, only: [:index, :show], param: :shift_id
+      end
     end
   end
 
