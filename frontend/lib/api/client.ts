@@ -438,6 +438,40 @@ class ApiClient {
       `/api/v1/activities${queryString}`
     );
   }
+
+  // Admin Recruiting endpoints
+  async getAdminRecruitingShifts(params?: {
+    company_id?: number;
+    status?: "paused" | "active" | "filled" | "completed";
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    per_page?: number;
+  }) {
+    const queryString = params
+      ? "?" +
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&")
+      : "";
+    return this.request<{
+      shifts: RecruitingShiftSummary[];
+      meta: {
+        total: number;
+        page: number;
+        per_page: number;
+        total_pages: number;
+        paused_count: number;
+      };
+    }>(`/api/v1/admin/recruiting${queryString}`);
+  }
+
+  async getAdminRecruitingDetail(shiftId: number) {
+    return this.request<RecruitingShiftDetailResponse>(
+      `/api/v1/admin/recruiting/${shiftId}`
+    );
+  }
 }
 
 export interface User {
@@ -851,6 +885,155 @@ export interface Activity {
   timestamp: string;
   status: "pending" | "success" | "error" | "info" | "neutral";
   metadata?: Record<string, unknown>;
+}
+
+// Admin Recruiting Types
+export interface RecruitingShiftSummary {
+  id: number;
+  tracking_code: string;
+  title: string;
+  job_type: string;
+  company: {
+    id: number;
+    name: string;
+  };
+  work_location: {
+    id: number;
+    name: string;
+    city: string;
+    state: string;
+  };
+  schedule: {
+    start_datetime: string;
+    end_datetime: string;
+    formatted_range: string;
+  };
+  pay: {
+    hourly_rate: number;
+    formatted_rate: string;
+  };
+  capacity: {
+    slots_total: number;
+    slots_filled: number;
+    slots_available: number;
+  };
+  status: string;
+  recruiting_status: "paused" | "active" | "filled" | "completed" | string;
+  stats: {
+    offers_sent: number;
+    offers_accepted: number;
+    offers_declined: number;
+    offers_timeout: number;
+  };
+  last_activity_at: string | null;
+}
+
+export interface RecruitingShiftDetail {
+  id: number;
+  tracking_code: string;
+  title: string;
+  description: string;
+  job_type: string;
+  company: {
+    id: number;
+    name: string;
+  };
+  work_location: {
+    id: number;
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+  };
+  created_by: {
+    id: number;
+    name: string;
+  };
+  schedule: {
+    start_datetime: string;
+    end_datetime: string;
+    duration_hours: number;
+    formatted_range: string;
+  };
+  pay: {
+    rate_cents: number;
+    hourly_rate: number;
+    formatted_rate: string;
+    estimated_total: number;
+  };
+  capacity: {
+    slots_total: number;
+    slots_filled: number;
+    slots_available: number;
+    min_workers_needed: number;
+  };
+  status: string;
+  recruiting_status: "paused" | "active" | "filled" | "completed" | string;
+  status_timestamps: {
+    posted_at: string | null;
+    recruiting_started_at: string | null;
+    filled_at: string | null;
+    completed_at: string | null;
+    cancelled_at: string | null;
+  };
+}
+
+export interface RecruitingSummary {
+  offers_sent: number;
+  offers_accepted: number;
+  offers_declined: number;
+  offers_timeout: number;
+  workers_scored: number;
+  workers_excluded: number;
+  is_paused: boolean;
+  pause_reason: string | null;
+  recruiting_started_at: string | null;
+  last_activity_at: string | null;
+}
+
+export interface RecruitingTimelineEntry {
+  id: number;
+  action: string;
+  source: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  icon: string;
+  label: string;
+  worker?: {
+    id: number;
+    name: string;
+  };
+  assignment?: {
+    id: number;
+    status: string;
+    algorithm_score: number | null;
+    distance_miles: number | null;
+  };
+}
+
+export interface WorkerContactSummary {
+  id: number;
+  worker: {
+    id: number;
+    name: string;
+    phone: string;
+  };
+  algorithm_score: number | null;
+  distance_miles: number | null;
+  status: string;
+  offer_sent_at: string | null;
+  response_received_at: string | null;
+  response_time_minutes: number | null;
+  response_method: string | null;
+  decline_reason: string | null;
+  outcome: "accepted" | "declined" | "timeout" | "pending" | "cancelled" | string;
+}
+
+export interface RecruitingShiftDetailResponse {
+  shift: RecruitingShiftDetail;
+  summary: RecruitingSummary;
+  timeline: RecruitingTimelineEntry[];
+  workers_contacted: WorkerContactSummary[];
 }
 
 export const apiClient = new ApiClient(API_URL);

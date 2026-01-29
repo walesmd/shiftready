@@ -16,6 +16,7 @@ import {
   Menu,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ import {
 const navigation = [
   { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
   { name: "Shifts", href: "/dashboard/admin/shifts", icon: Calendar },
+  { name: "Recruiting", href: "/dashboard/admin/recruiting", icon: Zap },
   { name: "Workers", href: "/dashboard/admin/workers", icon: Users },
   { name: "Companies", href: "/dashboard/admin/companies", icon: Building2 },
   { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
