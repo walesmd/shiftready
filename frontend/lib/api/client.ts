@@ -472,6 +472,85 @@ class ApiClient {
       `/api/v1/admin/recruiting/${shiftId}`
     );
   }
+
+  // Admin Feature Flags endpoints
+  async getFeatureFlags(params?: {
+    search?: string;
+    status?: "active" | "archived";
+    page?: number;
+    per_page?: number;
+  }) {
+    const queryString = params
+      ? "?" +
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined)
+          .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+          .join("&")
+      : "";
+    return this.request<{
+      feature_flags: FeatureFlag[];
+      meta: {
+        total: number;
+        page: number;
+        per_page: number;
+        total_pages: number;
+      };
+    }>(`/api/v1/admin/feature_flags${queryString}`);
+  }
+
+  async getFeatureFlag(id: number) {
+    return this.request<{
+      feature_flag: FeatureFlag;
+      audit_logs: FeatureFlagAuditLog[];
+    }>(`/api/v1/admin/feature_flags/${id}`);
+  }
+
+  async createFeatureFlag(data: CreateFeatureFlagData) {
+    return this.request<{ feature_flag: FeatureFlag }>(
+      "/api/v1/admin/feature_flags",
+      {
+        method: "POST",
+        body: { feature_flag: data },
+      }
+    );
+  }
+
+  async updateFeatureFlag(id: number, data: UpdateFeatureFlagData) {
+    return this.request<{ feature_flag: FeatureFlag }>(
+      `/api/v1/admin/feature_flags/${id}`,
+      {
+        method: "PATCH",
+        body: { feature_flag: data },
+      }
+    );
+  }
+
+  async toggleFeatureFlag(id: number) {
+    return this.request<{ feature_flag: FeatureFlag }>(
+      `/api/v1/admin/feature_flags/${id}/toggle`,
+      {
+        method: "POST",
+      }
+    );
+  }
+
+  async archiveFeatureFlag(id: number) {
+    return this.request<{ feature_flag: FeatureFlag }>(
+      `/api/v1/admin/feature_flags/${id}/archive`,
+      {
+        method: "POST",
+      }
+    );
+  }
+
+  async restoreFeatureFlag(id: number) {
+    return this.request<{ feature_flag: FeatureFlag }>(
+      `/api/v1/admin/feature_flags/${id}/restore`,
+      {
+        method: "POST",
+      }
+    );
+  }
 }
 
 export interface User {
@@ -1034,6 +1113,45 @@ export interface RecruitingShiftDetailResponse {
   summary: RecruitingSummary;
   timeline: RecruitingTimelineEntry[];
   workers_contacted: WorkerContactSummary[];
+}
+
+// Feature Flag Types
+export interface FeatureFlag {
+  id: number;
+  key: string;
+  value: boolean | string | number | Record<string, unknown> | unknown[];
+  value_type: "boolean" | "string" | "number" | "array" | "object" | "unknown";
+  description: string | null;
+  archived: boolean;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureFlagAuditLog {
+  id: number;
+  action: "created" | "updated" | "archived" | "restored";
+  previous_value: Record<string, unknown> | null;
+  new_value: Record<string, unknown> | null;
+  details: Record<string, unknown>;
+  created_at: string;
+  user: {
+    id: number;
+    email: string;
+  };
+}
+
+export interface CreateFeatureFlagData {
+  key: string;
+  value: boolean | string | number | Record<string, unknown> | unknown[];
+  description?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateFeatureFlagData {
+  value?: boolean | string | number | Record<string, unknown> | unknown[];
+  description?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export const apiClient = new ApiClient(API_URL);

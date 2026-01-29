@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import {
   Building2,
   Calendar,
+  Flag,
   LayoutDashboard,
   Settings,
   LogOut,
@@ -33,6 +34,7 @@ const navigation = [
   { name: "Recruiting", href: "/dashboard/admin/recruiting", icon: Zap },
   { name: "Workers", href: "/dashboard/admin/workers", icon: Users },
   { name: "Companies", href: "/dashboard/admin/companies", icon: Building2 },
+  { name: "Feature Flags", href: "/dashboard/admin/feature-flags", icon: Flag },
   { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
 ];
 
