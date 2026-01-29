@@ -13,7 +13,8 @@ module Api
 
           # Apply search filter
           if params[:search].present?
-            search_term = "%#{params[:search].downcase}%"
+            sanitized_search = ActiveRecord::Base.sanitize_sql_like(params[:search].downcase)
+            search_term = "%#{sanitized_search}%"
             flags = flags.where("LOWER(key) LIKE ? OR LOWER(description) LIKE ?", search_term, search_term)
           end
 
@@ -186,7 +187,6 @@ module Api
             updated_at: flag.updated_at
           }
         end
-
         def audit_log_response(log)
           {
             id: log.id,
@@ -195,11 +195,12 @@ module Api
             new_value: log.new_value,
             details: log.details,
             created_at: log.created_at,
-            user: {
+            user: log.user ? {
               id: log.user.id,
               email: log.user.email
-            }
+            } : nil
           }
+        end
         end
       end
     end

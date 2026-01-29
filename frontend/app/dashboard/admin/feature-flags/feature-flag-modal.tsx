@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,13 +67,6 @@ function getInitialJsonValue(flag: FeatureFlag | null): string {
 
 export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagModalProps) {
   const isEditing = !!flag;
-  const lastFlagIdRef = useRef<number | null>(null);
-
-  // Reset state when the flag changes (different flag or null)
-  const currentFlagId = flag?.id ?? null;
-  if (currentFlagId !== lastFlagIdRef.current) {
-    lastFlagIdRef.current = currentFlagId;
-  }
 
   const [key, setKey] = useState(() => flag?.key || "");
   const [description, setDescription] = useState(() => flag?.description || "");
@@ -102,17 +95,18 @@ export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagMod
     }
   };
 
-  const getValue = (): boolean | string | number | unknown => {
+  const getValue = (): boolean | string | number | Record<string, unknown> | unknown[] => {
     switch (valueType) {
       case "boolean":
         return booleanValue;
       case "string":
         return stringValue;
       case "number":
-        return parseFloat(numberValue) || 0;
+        const parsed = parseFloat(numberValue);
+        return Number.isNaN(parsed) ? 0 : parsed;
       case "json":
         try {
-          return JSON.parse(jsonValue);
+          return JSON.parse(jsonValue) as Record<string, unknown> | unknown[];
         } catch {
           return {};
         }
@@ -153,39 +147,45 @@ export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagMod
 
     setSaving(true);
 
-    const value = getValue();
+    try {
+      const value = getValue();
 
-    if (isEditing) {
-      const response = await apiClient.updateFeatureFlag(flag.id, {
-        value,
-        description: description || undefined,
-      });
+      if (isEditing) {
+        const response = await apiClient.updateFeatureFlag(flag.id, {
+          value,
+          description: description || undefined,
+        });
 
-      if (response.error) {
-        toast.error(`Failed to update flag: ${response.error}`);
-        setSaving(false);
-        return;
+        if (response.error) {
+          toast.error(`Failed to update flag: ${response.error}`);
+          return;
+        }
+
+        toast.success(`Flag "${key}" updated`);
+      } else {
+        const response = await apiClient.createFeatureFlag({
+          key,
+          value,
+          description: description || undefined,
+        });
+
+        if (response.error) {
+          toast.error(`Failed to create flag: ${response.error}`);
+          return;
+        }
+
+        toast.success(`Flag "${key}" created`);
       }
 
-      toast.success(`Flag "${key}" updated`);
-    } else {
-      const response = await apiClient.createFeatureFlag({
-        key,
-        value,
-        description: description || undefined,
-      });
-
-      if (response.error) {
-        toast.error(`Failed to create flag: ${response.error}`);
-        setSaving(false);
-        return;
-      }
-
-      toast.success(`Flag "${key}" created`);
+      onSave();
+    } catch (error) {
+      console.error("Feature flag save error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
-    onSave();
   };
 
   return (
@@ -207,7 +207,10 @@ export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagMod
               id="key"
               placeholder="my_feature_flag"
               value={key}
-              onChange={(e) => setKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"))}
+              onChange={(e) => {
+                const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+                setKey(/^\d/.test(cleaned) ? "_" + cleaned : cleaned);
+              }}
               disabled={isEditing}
               className="font-mono"
             />

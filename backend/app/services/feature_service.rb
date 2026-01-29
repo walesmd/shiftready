@@ -16,6 +16,9 @@ class FeatureService
         return false
       end
 
+      # Role-based hash without a role specified should return false
+      return false if flag_value.is_a?(Hash)
+
       # Handle boolean values
       return flag_value if flag_value.is_a?(TrueClass) || flag_value.is_a?(FalseClass)
 

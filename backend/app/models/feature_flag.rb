@@ -17,8 +17,11 @@ class FeatureFlag < ApplicationRecord
   after_commit :invalidate_cache
 
   class << self
-    def get(key)
-      find_by(key: key.to_s, archived: false)
+    def get(key, archived: false)
+      cache_key = cache_key_for(key, archived: archived)
+      Rails.cache.fetch(cache_key) do
+        find_by(key: key.to_s, archived: archived)
+      end
     end
 
     def enabled?(key)
@@ -37,6 +40,10 @@ class FeatureFlag < ApplicationRecord
       return nil unless flag
 
       flag.value
+    end
+
+    def cache_key_for(key, archived: false)
+      "feature_flag/#{key}/archived:#{archived}"
     end
   end
 
@@ -99,10 +106,8 @@ class FeatureFlag < ApplicationRecord
   private
 
   def invalidate_cache
-    Rails.cache.delete(cache_key_for_flag)
-  end
-
-  def cache_key_for_flag
-    "feature_flag/#{key}"
+    # Clear both archived states since a flag update could affect either lookup
+    Rails.cache.delete(self.class.cache_key_for(key, archived: false))
+    Rails.cache.delete(self.class.cache_key_for(key, archived: true))
   end
 end

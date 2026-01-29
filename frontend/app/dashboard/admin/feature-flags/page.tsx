@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,18 +83,20 @@ function renderValueDisplay(flag: FeatureFlag) {
         {String(flag.value)}
       </span>
     );
-  }
+  const jsonStr = JSON.stringify(flag.value);
   return (
     <span className="text-sm font-mono bg-muted px-2 py-0.5 rounded">
-      {JSON.stringify(flag.value).substring(0, 50)}...
+      {jsonStr.length > 50 ? jsonStr.substring(0, 50) + "..." : jsonStr}
     </span>
   );
+}
 }
 
 export default function AdminFeatureFlagsPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [statusFilter, setStatusFilter] = useState("active");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 300);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalFlags, setTotalFlags] = useState(0);
@@ -108,7 +111,7 @@ export default function AdminFeatureFlagsPage() {
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
 
   useEffect(() => {
-    const requestKey = `page:${page}:status:${statusFilter}:search:${searchQuery}:reload:${reloadKey}`;
+    const requestKey = `page:${page}:status:${statusFilter}:search:${debouncedSearch}:reload:${reloadKey}`;
     if (lastRequestKeyRef.current === requestKey) {
       return;
     }
@@ -122,7 +125,7 @@ export default function AdminFeatureFlagsPage() {
         page,
         per_page: PER_PAGE,
         status: statusFilter as "active" | "archived",
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
       });
 
       if (response.error) {
@@ -139,7 +142,7 @@ export default function AdminFeatureFlagsPage() {
     };
 
     void loadFlags();
-  }, [page, reloadKey, statusFilter, searchQuery]);
+  }, [page, reloadKey, statusFilter, debouncedSearch]);
 
   const handleStatusChange = (value: string) => {
     setPage(1);
@@ -148,7 +151,7 @@ export default function AdminFeatureFlagsPage() {
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    setSearchInput(e.target.value);
     setPage(1);
     lastRequestKeyRef.current = null;
   };
@@ -165,10 +168,16 @@ export default function AdminFeatureFlagsPage() {
       return;
     }
 
+    const updatedFlag = response.data?.feature_flag;
+    if (!updatedFlag) {
+      toast.error("Failed to toggle flag: Invalid response");
+      return;
+    }
+
     setFlags((prev) =>
-      prev.map((f) => (f.id === flag.id ? response.data!.feature_flag : f))
+      prev.map((f) => (f.id === flag.id ? updatedFlag : f))
     );
-    toast.success(`Flag "${flag.key}" ${response.data!.feature_flag.value ? "enabled" : "disabled"}`);
+    toast.success(`Flag "${flag.key}" ${updatedFlag.value ? "enabled" : "disabled"}`);
   };
 
   const handleArchive = async (flag: FeatureFlag) => {
@@ -241,7 +250,7 @@ export default function AdminFeatureFlagsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by key or description..."
-                value={searchQuery}
+                value={searchInput}
                 onChange={handleSearchChange}
                 className="pl-9"
               />
