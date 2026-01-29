@@ -23,7 +23,7 @@ module Api
 
           page = [params[:page].to_i, 1].max
           per_page = [[params[:per_page].to_i, 1].max, 100].min
-          per_page = 25 if per_page < 1
+          total_count = shifts.count
 
           # Custom sorting: paused shifts first, then by start_datetime
           shifts = shifts.select('shifts.*,

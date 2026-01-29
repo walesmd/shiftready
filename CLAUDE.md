@@ -5,7 +5,7 @@ On-demand staffing platform connecting employers with flexible workers via SMS.
 Based in San Antonio, TX with planned expansion across Texas.
 
 ## Company Values
-See [COMPANY_MANIFESTO.md](../COMPANY_MANIFESTO.md) for our core principles and values.
+See [COMPANY_MANIFESTO.md](./COMPANY_MANIFESTO.md) for our core principles and values.
 
 **Key principles that guide all decisions:**
 - Reduce friction between effort and income

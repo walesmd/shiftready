@@ -918,7 +918,7 @@ export interface RecruitingShiftSummary {
     slots_available: number;
   };
   status: string;
-  recruiting_status: "paused" | "active" | "filled" | string;
+  recruiting_status: "paused" | "active" | "filled" | "completed" | string;
   stats: {
     offers_sent: number;
     offers_accepted: number;
@@ -968,7 +968,7 @@ export interface RecruitingShiftDetail {
     min_workers_needed: number;
   };
   status: string;
-  recruiting_status: "paused" | "active" | "filled" | string;
+  recruiting_status: "paused" | "active" | "filled" | "completed" | string;
   status_timestamps: {
     posted_at: string | null;
     recruiting_started_at: string | null;
