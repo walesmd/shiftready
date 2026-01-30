@@ -70,6 +70,14 @@ Rails.application.routes.draw do
       # Admin namespace
       namespace :admin do
         resources :recruiting, only: [:index, :show], param: :shift_id
+
+        resources :feature_flags, only: [:index, :show, :create, :update] do
+          member do
+            post :toggle
+            post :archive
+            post :restore
+          end
+        end
       end
     end
   end
