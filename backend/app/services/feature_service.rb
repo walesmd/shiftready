@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class FeatureService
-  CACHE_TTL = 5.minutes
-
   class << self
     def enabled?(key, for_role: nil)
       flag_value = cached_value(key)
@@ -35,7 +33,9 @@ class FeatureService
     end
 
     def invalidate_cache(key)
-      Rails.cache.delete(cache_key(key))
+      # Delete both archived states using the model's cache key pattern
+      Rails.cache.delete(FeatureFlag.cache_key_for(key, archived: false))
+      Rails.cache.delete(FeatureFlag.cache_key_for(key, archived: true))
     end
 
     def invalidate_all_caches
@@ -47,14 +47,9 @@ class FeatureService
     private
 
     def cached_value(key)
-      Rails.cache.fetch(cache_key(key), expires_in: CACHE_TTL) do
-        flag = FeatureFlag.get(key)
-        flag&.value
-      end
-    end
-
-    def cache_key(key)
-      "feature_flag/#{key}"
+      # Delegate to FeatureFlag.get which handles caching with the correct key pattern
+      flag = FeatureFlag.get(key)
+      flag&.value
     end
   end
 end

@@ -83,13 +83,13 @@ function renderValueDisplay(flag: FeatureFlag) {
         {String(flag.value)}
       </span>
     );
+  }
   const jsonStr = JSON.stringify(flag.value);
   return (
     <span className="text-sm font-mono bg-muted px-2 py-0.5 rounded">
       {jsonStr.length > 50 ? jsonStr.substring(0, 50) + "..." : jsonStr}
     </span>
   );
-}
 }
 
 export default function AdminFeatureFlagsPage() {

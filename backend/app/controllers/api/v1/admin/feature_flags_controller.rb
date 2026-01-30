@@ -66,39 +66,45 @@ module Api
         def create
           @feature_flag = FeatureFlag.new(feature_flag_params)
 
-          if @feature_flag.save
+          ActiveRecord::Base.transaction do
+            @feature_flag.save!
             FeatureFlagAuditLog.log_created(
               feature_flag: @feature_flag,
               user: current_user,
               value: @feature_flag.value
             )
-
-            render json: { feature_flag: feature_flag_response(@feature_flag) }, status: :created
-          else
-            render_errors(@feature_flag.errors.full_messages)
           end
+
+          render json: { feature_flag: feature_flag_response(@feature_flag) }, status: :created
+        rescue ActiveRecord::RecordInvalid => e
+          render_errors(e.record.errors.full_messages)
         end
 
         # PATCH /api/v1/admin/feature_flags/:id
         def update
-          previous_value = { value: @feature_flag.value, description: @feature_flag.description }
+          ActiveRecord::Base.transaction do
+            @feature_flag.update!(feature_flag_params)
 
-          if @feature_flag.update(feature_flag_params)
-            new_value = { value: @feature_flag.value, description: @feature_flag.description }
+            # Only log audit if value or description actually changed
+            changes = @feature_flag.saved_changes.slice('value', 'description')
+            if changes.any?
+              previous_value = changes.transform_keys(&:to_sym).transform_values(&:first)
+              new_value = changes.transform_keys(&:to_sym).transform_values(&:last)
 
-            FeatureFlagAuditLog.log_updated(
-              feature_flag: @feature_flag,
-              user: current_user,
-              previous_value: previous_value,
-              new_value: new_value
-            )
+              FeatureFlagAuditLog.log_updated(
+                feature_flag: @feature_flag,
+                user: current_user,
+                previous_value: previous_value,
+                new_value: new_value
+              )
+            end
 
             FeatureService.invalidate_cache(@feature_flag.key)
-
-            render json: { feature_flag: feature_flag_response(@feature_flag) }
-          else
-            render_errors(@feature_flag.errors.full_messages)
           end
+
+          render json: { feature_flag: feature_flag_response(@feature_flag) }
+        rescue ActiveRecord::RecordInvalid => e
+          render_errors(e.record.errors.full_messages)
         end
 
         # POST /api/v1/admin/feature_flags/:id/toggle
@@ -200,7 +206,6 @@ module Api
               email: log.user.email
             } : nil
           }
-        end
         end
       end
     end

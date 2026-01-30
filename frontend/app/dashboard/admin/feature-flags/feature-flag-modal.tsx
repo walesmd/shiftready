@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -78,6 +78,18 @@ export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagMod
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Sync form state when flag prop changes while modal is open
+  useEffect(() => {
+    setKey(flag?.key || "");
+    setDescription(flag?.description || "");
+    setValueType(getInitialValueType(flag));
+    setBooleanValue(getInitialBooleanValue(flag));
+    setStringValue(getInitialStringValue(flag));
+    setNumberValue(getInitialNumberValue(flag));
+    setJsonValue(getInitialJsonValue(flag));
+    setJsonError(null);
+  }, [flag]);
+
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
       // Reset form state when opening
@@ -97,19 +109,23 @@ export function FeatureFlagModal({ open, onClose, onSave, flag }: FeatureFlagMod
 
   const getValue = (): boolean | string | number | Record<string, unknown> | unknown[] => {
     switch (valueType) {
-      case "boolean":
+      case "boolean": {
         return booleanValue;
-      case "string":
+      }
+      case "string": {
         return stringValue;
-      case "number":
+      }
+      case "number": {
         const parsed = parseFloat(numberValue);
         return Number.isNaN(parsed) ? 0 : parsed;
-      case "json":
+      }
+      case "json": {
         try {
           return JSON.parse(jsonValue) as Record<string, unknown> | unknown[];
         } catch {
           return {};
         }
+      }
     }
   };
 

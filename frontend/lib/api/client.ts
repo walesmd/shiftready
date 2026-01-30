@@ -1138,7 +1138,7 @@ export interface FeatureFlagAuditLog {
   user: {
     id: number;
     email: string;
-  };
+  } | null;
 }
 
 export interface CreateFeatureFlagData {
